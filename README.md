@@ -1,4 +1,4 @@
-# Greenthumb_Flow
+# LawnLogic
 
 ![Logo](LawnLogic_Logo_horizontal.png)
 
