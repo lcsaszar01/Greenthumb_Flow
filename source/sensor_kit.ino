@@ -1,21 +1,44 @@
+#include <string.h>
 #include <DHT.h>
 #include <Wire.h>
 #include "Si115X.h"
+#include <SoftwareSerial.h>
 
+/* Pinout:
+- A0 -> moisture sensor output
+- A1 -> pH sensor output
+- 4  -> hum/temp sensor output
+- 7  -> input to transistor that controls solenoid
+- 8  -> bluetooth receive pin
+- 9  -> bluetooth transmit pin
+*/
+
+#define RXPIN 8
+#define TXPIN 9
+#define REC_PACKET_LENGTH 32 // 1 byte packet ID, 28 bytes of sensor data, 1 byte solenoid ctl ack, 1 byte checksum, 1 byte stop_byte
+#define TRANS_PACKET_LENGTH 6 // 1 byte packet ID, 1 byte solenoid state, 2 bytes ON length, 1 byte checksum, 1 byte stop_byte
+#define STOP_BYTE '\0'
 #define MOISTPIN 0
 #define DRY_BOUND 523 // from calibration - soil moisture sensor output when just exposed to air - our humidity = 0%RH
 #define WET_BOUND 254 // from calibration - soil moisture sensor output when in a cup of water - our humidity = 100%RH
+#define PHPIN A1
 #define DHTTYPE DHT22 // hum temp sensor type
-#define DHTPIN 4 // hum temp sensor output pin
-#define SOLENOIDPIN 8 // arduino output pin that controls the gate to the transistor that controls the solenoid
+#define DHTPIN 4
+#define SOLENOIDPIN 7
 #define FLOW_STATE 0
 #define CUTOFF_STATE 1
 
+
 // Initialize objects
+SoftwareSerial BTSerial(RXPIN, TXPIN);
 DHT dht(DHTPIN, DHTTYPE);
 Si115X si1151;
 
 // declare globals
+
+char last_trans_ID_recieved;
+char last_trans_ID_transmitted;
+
 float moist, hum, temp, ir, vis, uv;
 
 const int check_sens_interval = 1000; // in milliseconds
@@ -34,7 +57,13 @@ void setup() {
 
   Serial.begin(9600); // start serial for output
 
+  last_trans_ID_recieved = (char)0x7F;
+  last_trans_ID_transmitted = (char)0x7F;
+
   pinMode(SOLENOIDPIN, OUTPUT);
+
+  // Bluetooth HC-05
+  BTSerial.begin(38400); // why this
 
   // hum/temp
   dht.begin();
@@ -65,10 +94,16 @@ void setup() {
 }
 
 void loop() {
-
+  
   // check for bluetooth transmissions received
-  // is it a problem if they arrive during delay()?
+  // is it a problem if they arrive during delay()? -- no, there's a buffer. look into length of buffer
+  // -- we think the buffer is 63 bytes, and FIFO
+  // -- data is lost with a delay longer than 800 ms
   // if solenoid control message received, turn solenoid_ctl_received on, change vals of solenoid_state, and solenoid_state_duration if applic., set solenoid_state_ticker to 0, verify that solenoid_state_duration % solenoid_ctl_interval = 0 or round to make it so
+  if (BTSerial.available()) {
+    char byte_read = BTSerial.read();
+  }
+
 
   // SOLENOID CONTROL
   // check if it's been 1 solenoid_ctl_interval since the last time we accessed solenoid control
@@ -125,6 +160,7 @@ void loop() {
   // Bluetooth transmission
   // send acks
   // send sensor info
+  EEBlue.write();
 
   // debug
   Serial.print(solenoid_ctl_ticker);
@@ -132,6 +168,64 @@ void loop() {
   Serial.println(check_sens_ticker);
 
   delay(delay_interval);
+}
+
+/*    ###############################   BLUETOOTH  #########################   */
+
+byte checksum(char *s, int length) {
+  byte c = 0;
+  for (int ic = 0; ic < length; ic++) {
+    c^= *s++;
+  }
+  return c;
+}
+
+bool read_packet() {
+  String buffer = BTSerial.readBytesUntil(STOP_BYTE);
+
+  // check for incorrect length
+  if (buffer.length() != REC_PACKET_LENGTH) {
+    Serial.print("BT Error: packet received has unexpected length of ");
+    Serial.println(buffer.length());
+    return false;
+  }
+
+  // check checksum
+  int checksum_index = REC_PACKET_LENGTH - 1;
+  if (checksum(buffer.substring(0,checksum_index)) != buffer[checksum_index]) {
+    Serial.println("BT Error: packet received checksum does not match");
+    return false;
+  }
+
+  // check transmission ID
+  byte trans_ID = buffer[0];
+  if (!((trans_ID == (last_trans_id_received && 0x01)) || ((trans_ID == 0x01) && (last_trans_id_received == 0x7F)))) {
+    Serial.print("BT Error: packet dropped. Previous transmission received: #");
+    Serial.print(last_trans_id_received, HEX);
+    Serial.print(", Transmission just received: #");
+    Serial.print(trans_ID, HEX);
+    return false;
+  }
+
+  // Update solenoid ctl
+  char solenoid_state_indic = buffer[1];
+  if (solenoid_state_indic = '0') {
+    solenoid_state = 0;
+  } else if (solenoid_state_indic = '1') {
+    solenoid_state = 1;
+  } else {
+    Serial.println("BT Error: Invalid solenoid ctl received");
+    return false;
+  }
+
+  int
+
+  // verify that solenoid_state_duration % solenoid_ctl_interval = 0 or round to make it so
+
+  solenoid_ctl_received = 1;
+  solenoid_state_ticker = 0;
+
+  return true;
 }
 
 /*    ###############################   SENSOR READINGS AND OUTPUT  #########################   */
