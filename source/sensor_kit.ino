@@ -41,12 +41,27 @@ char last_trans_ID_transmitted;
 
 float moist, hum, temp, ir, vis, uv, ph;
 
+float avg_moist = 0;
+float avg_hum = 0;
+float avg_temp = 0;
+float avg_ir = 0;
+float avg_vis = 0;
+float avg_uv = 0;
+float avg_ph = 0;
+
+int n_readings = 0; // will incrementally go up every time a reading is taken before it's transmitted
+
 // timing related:
-unsigned long begin_time;
+//unsigned long begin_time;
+unsigned long check_sens_timer;
 const unsigned long check_sens_interval = 1000; // in milliseconds
+unsigned long transmit_sens_timer;
+const unsigned long transmit_sens_interval = 5000; // will change to 1 min later, 5s for testing purposes
+unsigned long solenoid_ctl_timer;
 const unsigned long solenoid_ctl_interval = 100; // in milliseconds - we leave the water on for time in solenoid_control_interval increments
 
 // solenoid control:
+unsigned long solenoid_state_timer;
 unsigned long solenoid_state_duration; // will be set upon receiving transmission from controller
 bool solenoid_state;
 bool solenoid_ctl_received;
@@ -78,6 +93,11 @@ void setup() {
   solenoid_state = CUTOFF_STATE;
   solenoid_ctl_received = 0;
   solenoid_state_duration = 1000;
+
+  // set timers
+  set_timer(check_sens_timer);
+  set_timer(transmit_sens_timer);
+  set_timer(solenoid_ctl_timer);
 }
 
 void loop() {
@@ -105,64 +125,80 @@ void loop() {
 
   // SOLENOID CONTROL
   // check if it's been 1 solenoid_ctl_interval since the last time we accessed solenoid control
-  if (time_reached(solenoid_ctl_interval)) {
+  if (check_timer(solenoid_ctl_timer, solenoid_ctl_interval)) {
 
     // Access solenoid control
 
     // If the state has changed via bluetooth instruction instead of timeout (done directly after bluetooth transmission), call set_solenoid_state, reset ticker to 0
     if (solenoid_ctl_received) {
       set_solenoid_state(solenoid_state);
-      set_timer();
+      set_timer(solenoid_state_timer);
       solenoid_ctl_received = 0;
 
     // Otherwise, check for timeout of FLOW_STATE
     } else {
       if (solenoid_state == FLOW_STATE) {
-        if (check_timer(solenoid_state_duration)) {
+        if (check_timer(solenoid_state_timer, solenoid_state_duration)) {
           set_solenoid_state(CUTOFF_STATE);
           solenoid_state = CUTOFF_STATE;
         }
       }
     }
-
+    
+    Serial.println("solenoid");
+    set_timer(solenoid_ctl_timer);
   }
   
   // SENSORS
   // check if it's been 1 check_sens_interval since the last time we accessed the sensors
-  if (time_reached(check_sens_interval)) {
-    // update readings
+  if (check_timer(check_sens_timer, check_sens_interval)) {
+    // get readings
     read_moist();
     read_hum_temp();
     read_sunlight();
     read_ph();
 
+    // ERROR CHECKING -- check for -1's
+    // could also make temp sensor check for temp operational bounds for other sensors
+
+    // update averages:
+    n_readings++;
+    avg_moist = update_avg(moist, avg_moist, n_readings);
+    avg_hum = update_avg(hum, avg_hum, n_readings);
+    avg_temp = update_avg(temp, avg_temp, n_readings);
+    avg_ir = update_avg(ir, avg_ir, n_readings);
+    avg_vis = update_avg(vis, avg_vis, n_readings);
+    avg_uv = update_avg(uv, avg_uv, n_readings);
+    avg_ph = update_avg(ph, avg_ph, n_readings);
+
     // output to serial monitor
     output_serial();
 
-    // ERROR CHECKING -- check for -1's
-    // could also make temp sensor check for temp operational bounds for other sensors
+    Serial.println("check");
+    set_timer(check_sens_timer);
   }
 
   // Bluetooth transmission
   // send acks
+
   // send sensor info
-  //EEBlue.write();
+  if (check_timer(transmit_sens_timer, transmit_sens_interval)) {
+    output_serial_transmission();
+    n_readings = 0;
+    Serial.println("trans");
+    set_timer(transmit_sens_timer);
+  }
 }
 
 /*    ###############################   TIMING     #########################   */
-bool time_reached(unsigned long interval) {
-  if ((millis() % interval) == 0) {
-    return 1; // True
-  }
-  return 0;
+
+void set_timer(unsigned long timer) {
+  timer = millis();
+  Serial.println(timer);
 }
 
-void set_timer() {
-  begin_time = millis();
-}
-
-bool check_timer(unsigned long duration) {
-  if ((millis() - begin_time) >= duration) {
+bool check_timer(unsigned long timer, unsigned long interval) {
+  if ((millis() - timer) >= interval) {
     return 1;
   }
   return 0;
@@ -266,6 +302,10 @@ void read_ph() {
   ph = volt2ph(voltage);
 }
 
+float update_avg(float new_value, float avg_value, int n_readings) {
+  return (avg_value*(float)(n_readings - 1) + new_value)/(float)n_readings;
+}
+
 // Outputs sensor values to serial monitor
 void output_serial() {
   Serial.print("Moisture: ");
@@ -282,6 +322,26 @@ void output_serial() {
   Serial.print(uv);
   Serial.print(" lum\t pH: ");
   Serial.println(ph);
+}
+
+// Outputs averaged sensor values over transmit_sens_interval to serial monitor
+void output_serial_transmission() {
+  Serial.println("........TRANSMITTING:................");
+  Serial.print("Moisture: ");
+  Serial.print(avg_moist);
+  Serial.print("%\t Humidity: ");
+  Serial.print(avg_hum);
+  Serial.print("%\t Temperature: ");
+  Serial.print(avg_temp);
+  Serial.print(" F\t IR: ");
+  Serial.print(avg_ir);
+  Serial.print(" lum\t Visible: ");
+  Serial.print(avg_vis);
+  Serial.print(" lum\t UV: ");
+  Serial.print(avg_uv);
+  Serial.print(" lum\t pH: ");
+  Serial.println(avg_ph);
+  Serial.println("......................................");
 }
 
 /*    ###############################   SOILENOID CONTROLS  #########################   */
