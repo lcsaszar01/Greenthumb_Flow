@@ -39,7 +39,7 @@ Si115X si1151;
 char last_trans_ID_recieved;
 char last_trans_ID_transmitted;
 
-float moist, hum, temp, ir, vis, uv;
+float moist, hum, temp, ir, vis, uv, ph;
 
 const int check_sens_interval = 1000; // in milliseconds
 int check_sens_ticker;
@@ -83,14 +83,12 @@ void setup() {
   }
 
   // set counters and states
-  check_sens_ticker = check_sens_interval;
-  solenoid_ctl_ticker = solenoid_ctl_interval;
-  solenoid_state = FLOW_STATE;
+  check_sens_ticker = 0;
+  solenoid_ctl_ticker = 0;
+  solenoid_state = CUTOFF_STATE;
   solenoid_state_ticker = 0;
   solenoid_ctl_received = 0;
-
-  // just for testing
-  solenoid_state_duration = 3000;
+  solenoid_state_duration = 1000;
 }
 
 void loop() {
@@ -100,8 +98,20 @@ void loop() {
   // -- we think the buffer is 63 bytes, and FIFO
   // -- data is lost with a delay longer than 800 ms
   // if solenoid control message received, turn solenoid_ctl_received on, change vals of solenoid_state, and solenoid_state_duration if applic., set solenoid_state_ticker to 0, verify that solenoid_state_duration % solenoid_ctl_interval = 0 or round to make it so
-  if (BTSerial.available()) {
+  /*(if (BTSerial.available()) {
     char byte_read = BTSerial.read();
+  }*/
+  if (Serial.available()) {
+    char msg = Serial.read();
+    if (msg == 'f') {
+      solenoid_state = FLOW_STATE;
+      solenoid_ctl_received = 1;
+      solenoid_state_duration = 3000;
+    } else if (msg == 'c') {
+      solenoid_state = CUTOFF_STATE;
+      solenoid_ctl_received = 1;
+      solenoid_state_duration = 3000;
+    }
   }
 
 
@@ -124,7 +134,7 @@ void loop() {
           set_solenoid_state(CUTOFF_STATE);
           solenoid_state_ticker = 0;
         } else {
-          solenoid_state_ticker -= solenoid_ctl_interval;
+          solenoid_state_ticker += solenoid_ctl_interval;
         }
       }
     }
@@ -143,6 +153,7 @@ void loop() {
     read_moist();
     read_hum_temp();
     read_sunlight();
+    read_ph();
 
     // output to serial monitor
     output_serial();
@@ -160,12 +171,7 @@ void loop() {
   // Bluetooth transmission
   // send acks
   // send sensor info
-  EEBlue.write();
-
-  // debug
-  Serial.print(solenoid_ctl_ticker);
-  Serial.print(", ");
-  Serial.println(check_sens_ticker);
+  //EEBlue.write();
 
   delay(delay_interval);
 }
@@ -181,7 +187,7 @@ byte checksum(char *s, int length) {
 }
 
 bool read_packet() {
-  String buffer = BTSerial.readBytesUntil(STOP_BYTE);
+  /*String buffer = BTSerial.readBytesUntil(STOP_BYTE);
 
   // check for incorrect length
   if (buffer.length() != REC_PACKET_LENGTH) {
@@ -223,7 +229,7 @@ bool read_packet() {
   // verify that solenoid_state_duration % solenoid_ctl_interval = 0 or round to make it so
 
   solenoid_ctl_received = 1;
-  solenoid_state_ticker = 0;
+  solenoid_state_ticker = 0;*/
 
   return true;
 }
@@ -257,6 +263,17 @@ void read_sunlight() {
   uv = si1151.ReadHalfWord_UV();
 }
 
+// Converts voltage reading to pH - 2.5 is neutral voltage reading, so multiply 2.5-voltage by calibrated slope 1/0.18 and add offset of 7
+float volt2ph (float voltage) {
+    return 7 + ((2.5 - voltage) / 0.18);
+}
+
+// Reads pH from sensor and saves to ph
+void read_ph() {
+  float voltage = 5.0 / 1024.0 * analogRead(PHPIN); // 5 for 5V, 1024 adc resolution
+  ph = volt2ph(voltage);
+}
+
 // Outputs sensor values to serial monitor
 void output_serial() {
   Serial.print("Moisture: ");
@@ -271,7 +288,8 @@ void output_serial() {
   Serial.print(vis);
   Serial.print(" lum\t UV: ");
   Serial.print(uv);
-  Serial.println(" lum");
+  Serial.print(" lum\t pH: ");
+  Serial.println(ph);
 }
 
 /*    ###############################   SOILENOID CONTROLS  #########################   */
@@ -279,10 +297,10 @@ void output_serial() {
 // turns solenoid off or on
 void set_solenoid_state(bool state) {
   if (state == CUTOFF_STATE) {
-    Serial.println("solenoid off!");
-    digitalWrite(SOLENOIDPIN, HIGH)
+    //Serial.println("solenoid off!");
+    digitalWrite(SOLENOIDPIN, HIGH);
   } else {
-    Serial.println("solenoid on!");
+    //Serial.println("solenoid on!");
     digitalWrite(SOLENOIDPIN, LOW);
   }
 }
