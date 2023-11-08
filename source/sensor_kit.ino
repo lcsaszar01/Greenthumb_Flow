@@ -41,17 +41,15 @@ char last_trans_ID_transmitted;
 
 float moist, hum, temp, ir, vis, uv, ph;
 
-const int check_sens_interval = 1000; // in milliseconds
-int check_sens_ticker;
+// timing related:
+unsigned long begin_time;
+const unsigned long check_sens_interval = 1000; // in milliseconds
+const unsigned long solenoid_ctl_interval = 100; // in milliseconds - we leave the water on for time in solenoid_control_interval increments
 
-const int solenoid_ctl_interval = 100; // in milliseconds - we leave the water on for time in solenoid_control_interval increments
-int solenoid_ctl_ticker;
+// solenoid control:
+unsigned long solenoid_state_duration; // will be set upon receiving transmission from controller
 bool solenoid_state;
-int solenoid_state_duration; // will be set upon receiving transmission from controller
-int solenoid_state_ticker; // incrementally increased to match duration
 bool solenoid_ctl_received;
-
-const int delay_interval = min(check_sens_interval, solenoid_ctl_interval);
 
 void setup() {
 
@@ -76,17 +74,8 @@ void setup() {
       Serial.println("Si1151 is ready!");
   }
 
-  // verify intervals:
-  if (check_sens_interval % delay_interval != 0 || solenoid_ctl_interval % delay_interval != 0) {
-    Serial.print("Sensor check and solenoid control intervals need to be a multiple of ");
-    Serial.println(delay_interval);
-  }
-
-  // set counters and states
-  check_sens_ticker = 0;
-  solenoid_ctl_ticker = 0;
+  // set defaults
   solenoid_state = CUTOFF_STATE;
-  solenoid_state_ticker = 0;
   solenoid_ctl_received = 0;
   solenoid_state_duration = 1000;
 }
@@ -110,45 +99,37 @@ void loop() {
     } else if (msg == 'c') {
       solenoid_state = CUTOFF_STATE;
       solenoid_ctl_received = 1;
-      solenoid_state_duration = 3000;
     }
   }
 
 
   // SOLENOID CONTROL
   // check if it's been 1 solenoid_ctl_interval since the last time we accessed solenoid control
-  if (solenoid_ctl_ticker == solenoid_ctl_interval) {
+  if (time_reached(solenoid_ctl_interval)) {
 
     // Access solenoid control
 
     // If the state has changed via bluetooth instruction instead of timeout (done directly after bluetooth transmission), call set_solenoid_state, reset ticker to 0
     if (solenoid_ctl_received) {
       set_solenoid_state(solenoid_state);
-      solenoid_state_ticker = 0;
+      set_timer();
       solenoid_ctl_received = 0;
 
     // Otherwise, check for timeout of FLOW_STATE
     } else {
       if (solenoid_state == FLOW_STATE) {
-        if (solenoid_state_ticker == solenoid_state_duration) {
+        if (check_timer(solenoid_state_duration)) {
           set_solenoid_state(CUTOFF_STATE);
-          solenoid_state_ticker = 0;
-        } else {
-          solenoid_state_ticker += solenoid_ctl_interval;
+          solenoid_state = CUTOFF_STATE;
         }
       }
     }
 
-    // reset counter
-    solenoid_ctl_ticker = 0;
-
-  } else {
-    solenoid_ctl_ticker += delay_interval;
   }
   
   // SENSORS
   // check if it's been 1 check_sens_interval since the last time we accessed the sensors
-  if (check_sens_ticker == check_sens_interval) {
+  if (time_reached(check_sens_interval)) {
     // update readings
     read_moist();
     read_hum_temp();
@@ -160,20 +141,31 @@ void loop() {
 
     // ERROR CHECKING -- check for -1's
     // could also make temp sensor check for temp operational bounds for other sensors
-
-    // reset counter
-    check_sens_ticker = 0;
-
-  } else {
-    check_sens_ticker += delay_interval;
   }
 
   // Bluetooth transmission
   // send acks
   // send sensor info
   //EEBlue.write();
+}
 
-  delay(delay_interval);
+/*    ###############################   TIMING     #########################   */
+bool time_reached(unsigned long interval) {
+  if ((millis() % interval) == 0) {
+    return 1; // True
+  }
+  return 0;
+}
+
+void set_timer() {
+  begin_time = millis();
+}
+
+bool check_timer(unsigned long duration) {
+  if ((millis() - begin_time) >= duration) {
+    return 1;
+  }
+  return 0;
 }
 
 /*    ###############################   BLUETOOTH  #########################   */
