@@ -5,24 +5,25 @@
 Changed for project by @lcsaszar
 
 '''
-
-# import required modules
-import requests, time, os
+from dotenv import load_dotenv
+from pprint import pprint
+import requests 
+import time
+import os
 flag = 1
     
-def forcast(whattime):
+load_dotenv()    
+    
+def forcast(whattime, city="South Bend"):
 	# Enter your API key here
-	api_key = "b3cdaf5851aca17e278e72476ff2ed93"
+	api_key = os.getenv("API_KEY")
 
 	# base_url variable to store url
 	base_url = "http://api.openweathermap.org/data/2.5/weather?"
 
-	# Give city name
-	city_name = "South Bend"
-
 	# complete_url variable to store
 	# complete url address
-	complete_url = base_url + "appid=" + api_key + "&q=" + city_name
+	complete_url = base_url + "appid=" + api_key + "&q=" + city
 
 	# get method of requests module
 	# return response object
@@ -83,8 +84,16 @@ def forcast(whattime):
 
 	else:
 		print(" City Not Found ")
- 
-while(flag != 0):
-    time.sleep(1800)
-    whattime = time.time()
-    forcast(whattime)
+    
+if __name__ == "__main__":
+    print('\n*** Current Weather Conditions ***\n')
+    
+    city = input('\nPlease enter a city name:')
+    
+    while(flag != 0):
+        time.sleep(1800)
+        whattime = time.time()
+        forcast(whattime) 
+    
+
+    

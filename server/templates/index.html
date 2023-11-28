@@ -13,13 +13,7 @@
   <meta name="twitter:site" content="@notredame">
   <meta name="twitter:creator" content="@ndwebteam">
   <meta name="twitter:image" property="og:image" content="https://static.nd.edu/images/webclips/default/webclip-1024.png">
-  <meta property="og:description" name="description" content="Page description.">
-  <meta property="og:site_name" content="Notre Dame Web Theme">
-  <meta property="og:title" content="Notre Dame Web Theme">
-  <meta property="og:type" content="website">
-  <meta property="og:url" content="https://site_url">
-  <meta property="og:locale" content="en_US">
-  <title>Page Title | Site Name | University of Notre Dame</title>
+  <title>Lawn Logic - Senior Computer Engineering Project | University of Notre Dame</title>
   <link rel="manifest" href="/manifest.json" crossorigin="use-credentials">
   <link rel="icon" href="/favicon.ico" sizes="any">
   <link rel="icon" href="https://static.nd.edu/images/monogram/monogram.svg" type="image/svg+xml">
@@ -28,7 +22,7 @@
   <link rel="stylesheet" type="text/css" href="https://conductor.nd.edu/stylesheets/themes/ndt/3.0/ndt.css" />
   <link rel="stylesheet" href="./stylesheets/site.css">
 </head>
-<body vocab="https://schema.org/" class="nav-top-true">
+<body vocab="https://schema.org/" class="nav-top-true full-width">
   <!-- Skip links -->
   <nav class="skip-links" aria-label="Skip links">
     <ul>
@@ -42,17 +36,17 @@
     <header id="header" class="site-header">
       <p class="mark-header"><a href="https://www.nd.edu/">University of Notre Dame</a></p>
       <div class="site-title-group">
-        <p id="site-title" class="site-title"><a href="/" accesskey="1" title="Homepage shortcut key = 1">Site Name</a></p>
+        <p id="site-title" class="site-title"><a href="index.html" accesskey="1" title="Homepage shortcut key = 1">Lawn Logic - Senior Computer Engineering Project</a></p>
       </div>
       <!-- Header Search/Nav  -->
       <div class="nav-header">
         <nav id="nav-top" class="nav-top" role="navigation" aria-label="Primary navigation">
           <div id="primary">
             <ul>
-              <li><a href="/" aria-label="Home"><svg class="icon" width="16" height="16"><use xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="#icon-home"></use></svg></a></li>
-              <li><a class="active" href="#">Page A</a></li>
-              <li><a href="#">Page B</a></li>
-              <li><a href="#">Page C</a></li>
+              <li><a class="active" href="index.html" aria-label="Home"><svg class="icon" width="16" height="16"><use xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="#icon-home"></use></svg></a></li>
+              <li><a href="more.html">About</a></li>
+              <li><a href="weather_report.html">Weather</a></li>
+              <li><a href="log_in.html">Log In</a></li>
               <li class="nav-search"><button class="btn-search search-toggle" aria-label="Toggle search"><svg class="icon" width="16" height="16"><use xlink:href="#icon-search"></use></svg></button></li>
             </ul>
             <div class="nav-search-wrapper">
@@ -87,51 +81,77 @@
     </header>
     <!-- Site Content -->
     <div id="content" class="site-content">
-      <div class="page-header"></div>
-      <main class="page-main" role="main">
-        <ol class="breadcrumbs">
-          <li><a href="/">Home</a> › </li>
-          <li><a href="#">Parent</a> › </li>
-          <li>Page Title</li>
-        </ol>
-        <h1 class="page-title">Page Title</h1>
-        <!-- Page Content -->
-        <p>Main page content...</p>
-        <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Apud ceteros autem philosophos, qui quaesivit aliquid, tacet; Dempta enim aeternitate nihilo beatior Iuppiter quam Epicurus; Tu vero, inquam, ducas licet, si sequetur; Duo Reges: constructio interrete. Isto modo ne improbos quidem, si essent boni viri. Sed ad illum redeo.</p>
+
+    <!-- Page Header -->
+    <div class="page-header has-title has-image">
+      <p class="page-title" aria-hidden="true">Lawn Logic</p>
+      <p class="page-lede" aria-hidden="true">Grow smarter, Save water 😉</p>
+      <p class="page-image">
+          <img src="../static/logo.png" width="500" height="300"
+               srcset="../static/logo.png  100w,
+                       ../static/logo.png  100w,
+                       ../static/logo.png  100w"
+
+               sizes="(min-width:768px) 75vw, 100vw"
+               alt="Header image: Lawn Logic Logo">
+      </p>
+    </div>
+
+    <main class="page-main" role="main">
+      <h1 class="page-title">Senior Computer Engineering Capstone</h1>
+      <p class="page-lede">Grow smarter, save water</p>
+
+      <!-- Page Intro -->
+      <div class="block-center">
+        <p>Lawn Logic seeks to turn your lawn into a smart watering space. By enabling you with weather information along with soil and sunlight conditions, you too can make your grass thrive.
+        <p>Lawn Logic is the Senior Computer Engineering Capstone project of Group 1 members; Lydia Csaszar, Hannah Long, Kate Mealey.</p>
+      </div>
+
+      <!-- Directions -->
+      <div class="section-news">
+        <div class="heading-action">
+          <h2 class="section-title">How it works</h2>
+          <a class="btn btn-inline btn-more" href="more.html">More
+          </a>
+        </div>
+        <div class="grid grid-gap grid-xl-3">
+          <article class="article card hover-bg hover-grow horizontal stacked-xl" typeof="NewsArticle">
+            <div class="card-image entry-image">
+              <img property="image" src="../static/case_render.png" width="600" height="400" alt="">
+            </div>
+            <div class="card-body hover-more">
+              <h2 class="article-title card-title" property="headline"><a class="card-link" href="more.html">Place the sticks in the ground</a></h2>
+            </div>
+          </article>
+          <article class="article card hover-bg hover-grow horizontal stacked-xl" typeof="NewsArticle">
+            <div class="card-image entry-image">
+              <img property="image" src="../static/case_render.png" width="600" height="400" alt="">
+            </div>
+            <div class="card-body hover-more">
+              <h2 class="article-title card-title" property="headline"><a class="card-link" href="more.html">Add the controler to your pannel</a></h2>
+            </div>
+          </article>
+          <article class="article card hover-bg hover-grow horizontal stacked-xl" typeof="NewsArticle">
+            <div class="card-image entry-image">
+              <img property="image" src="../static/logo.png" width="600" height="400" alt="">
+            </div>
+            <div class="card-body hover-more">
+              <h2 class="article-title card-title" property="headline"><a class="card-link" href="more.html">Monitor from your account</a></h2>
+            </div>
+          </article>
+        </div>
+      </div>
+
+      
       </main>
       <div class="page-sidebar">
         <!-- Full Nav -->
         <nav id="nav" class="nav-site nav-full" role="navigation" aria-label="Primary navigation">
           <ul class="depth_1">
-            <li class="active"><a href="#">Page A</a>
-              <ul class="depth_2">
-                <li><a href="#">Subpage A</a></li>
-                <!-- Current Page -->
-                <li class="active"><a class="current" href="#">Subpage B</a>
-                  <ul class="nav-level-2 depth_3">
-                    <li><a href="#">Child Page A</a></li>
-                    <li><a href="#">Child Page B</a></li>
-                  </ul>
-                </li>
-                <li><a href="#">Subpage C</a></li>
-              </ul>
-            </li>
-            <li><a href="#">Page B</a></li>
-            <li><a href="#">Page C</a></li>
-          </ul>
-        </nav>
-        <!-- Current section nav -->
-        <nav class="nav-section nav-site" role="navigation" aria-label="Section navigation">
-          <ul class="depth_2">
-            <li><a href="#">Subpage A</a></li>
-            <!-- Current Page -->
-            <li class="active"><a href="#" class="current">Subpage B</a>
-              <ul class="nav-level-2 depth_3">
-                <li><a href="#">Child Page A</a></li>
-                <li><a href="#">Child Page B</a></li>
-              </ul>
-            </li>
-            <li><a href="#">Subpage C</a></li>
+            <li class="active"><a href="index.html">Home</a>
+            <li><a href="more.html">More</a></li>
+            <li><a href="weather_report.html">Weather</a></li>
+            <li><a href="log_in.html">Log In</a></li>
           </ul>
         </nav>
       </div>
@@ -142,31 +162,26 @@
         <meta property="parentOrganization" resource="#parentorg" content="University of Notre Dame">
         <!-- Organizational Breadcrumbs -->
         <ul class="footer-breadcrumbs">
-          <li><a href="#">Parent Unit</a></li>
+          <li><a href="https://engineering.nd.edu">College of Engineering</a></li>
         </ul>
-        <p><a href="/" class="site-link" property="url"><span property="name">Site Name</span></a></p>
+        <p><a href="index.html" class="site-link" property="url"><span property="name">Lawn Logic</span></a></p>
         <div class="footer-contacts">
           <p class="contact-info">
             <span class="address" property="address" typeof="PostalAddress">
-              <span property="streetAddress">Building Address</span><br>
+              <span property="streetAddress">Department of Computer Science and Engineering</span><br>
               <span property="addressLocality">Notre Dame</span>, <span property="addressRegion">IN</span> <span property="postalCode">46556</span> <span property="addressCountry">USA</span>
             </span>
-            <span class="footer-phone" property="telephone" content="+1 (574) 555-1234">Phone <a href="tel:(574)555-1234">(574) 555-1234</a></span>
-            <span class="footer-email" property="email"><a href="mailto:example@nd.edu">example@nd.edu</a></span>
+            <span class="footer-website" property="link"><a href="https://cse.nd.edu/">cse.nd.edu</span>
           </p>
           <nav class="social" aria-label="Site social media navigation" vocab="">
-            <ul>
-              <!-- Site-specific Social Media -->
-              <li><a class="soc-facebook" href="#" rel="noopener" aria-label="Site Name on Facebook"><svg class="icon" width="16" height="16" aria-hidden="true"> <use xlink:href="#icon-facebook"></use> </svg> Facebook</a></li>
-              <li><a class="soc-twitter" href="#" rel="noopener" aria-label="Site Name on Twitter"><svg class="icon" width="16" height="16" aria-hidden="true"> <use xlink:href="#icon-twitter"></use> </svg> Twitter</a></li>
-              <li><a class="soc-instagram" href="#" rel="noopener" aria-label="Site Name on Instagram"><svg class="icon" width="16" height="16" aria-hidden="true"> <use xlink:href="#icon-instagram"></use> </svg> Instagram</a></li>
+
             </ul>
           </nav>
         </div>
         <div property="logo" typeof="ImageObject">
           <meta property="url" content="https://static.nd.edu/images/webclips/default/webclip-60.png">
         </div>
-        <p class="copyright"><a href="https://www.nd.edu/copyright/">&copy; CURRENT YEAR</a> <a href="https://www.nd.edu">University of Notre Dame</a></p>
+        <p class="copyright"><a href="https://www.nd.edu/copyright/">&copy; 2023</a> <a href="https://www.nd.edu">University of Notre Dame</a></p>
       </div>
       <div class="footer-parent" property="parentOrganization" typeof="CollegeOrUniversity" resource="#parentorg">
         <meta property="name" content="University of Notre Dame">
@@ -186,20 +201,13 @@
             </ul>
           </nav>
           <nav class="social" aria-label="Notre Dame social media navigation" vocab="">
-            <ul>
-              <!-- Global Social Media -->
-              <li><a class="soc-facebook" href="https://www.facebook.com/notredame/" rel="noopener" aria-label="Notre Dame on Facebook"><svg class="icon" width="16" height="16" aria-hidden="true"> <use xlink:href="#icon-facebook"></use> </svg> Facebook</a></li>
-              <li><a class="soc-twitter" href="https://twitter.com/NotreDame/" rel="noopener" aria-label="Notre Dame on Twitter"><svg class="icon" width="16" height="16" aria-hidden="true"> <use xlink:href="#icon-twitter"></use> </svg> Twitter</a></li>
-              <li><a class="soc-instagram" href="https://www.instagram.com/notredame/" rel="noopener" aria-label="Notre Dame on Instagram"><svg class="icon" width="16" height="16" aria-hidden="true"> <use xlink:href="#icon-instagram"></use> </svg> Instagram</a></li>
-              <li><a class="soc-youtube" href="https://www.youtube.com/user/NDdotEDU" rel="noopener" aria-label="Notre Dame on YouTube"><svg class="icon" width="16" height="16" aria-hidden="true"> <use xlink:href="#icon-youtube"></use> </svg> YouTube</a></li>
-              <li><a class="soc-linkedin" href="https://www.linkedin.com/school/university-of-notre-dame/" rel="noopener" aria-label="Notre Dame on LinkedIn"><svg class="icon" width="16" height="16" aria-hidden="true"> <use xlink:href="#icon-linkedin"></use> </svg> LinkedIn</a></li>
-            </ul>
+            
           </nav>
         </div>
       </div>
     </footer>
   </div><!-- .wrapper -->
   <script src="https://conductor.nd.edu/javascripts/themes/ndt/3.0/ndt.js"></script>
-  <script src="./javascripts/site.js"></script>
+  <script src="../static/site.js"></script>
 </body>
 </html>

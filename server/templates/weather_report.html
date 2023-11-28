@@ -42,14 +42,14 @@
     <header id="header" class="site-header">
       <p class="mark-header"><a href="https://www.nd.edu/">University of Notre Dame</a></p>
       <div class="site-title-group">
-        <p id="site-title" class="site-title"><a href="/" accesskey="1" title="Homepage shortcut key = 1">Lawn Logic</a></p>
+        <p id="site-title" class="site-title"><a href="index.html" accesskey="1" title="Homepage shortcut key = 1">Lawn Logic</a></p>
       </div>
       <!-- Header Search/Nav  -->
       <div class="nav-header">
         <nav id="nav-top" class="nav-top" role="navigation" aria-label="Primary navigation">
           <div id="primary">
             <ul>
-              <li><a href="/" aria-label="Home"><svg class="icon" width="16" height="16"><use xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="#icon-home"></use></svg></a></li>
+              <li><a href="index.html" aria-label="Home"><svg class="icon" width="16" height="16"><use xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="#icon-home"></use></svg></a></li>
               <li><a href="about.html">More</a></li>
               <li><a class="active" href="weather_report.html">Weather</a></li>
               <li><a href="log_in.html">Log In</a></li>
@@ -70,7 +70,7 @@
       <!-- Mobile Navbar -->
       <div class="nav-mobile-util">
         <ul class="no-bullets">
-          <li><a href="/"><svg class="icon" width="16" height="16"><use xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="#icon-home"></use></svg> Home</a></li>
+          <li><a href="index.html"><svg class="icon" width="16" height="16"><use xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="#icon-home"></use></svg> Home</a></li>
           <li><button class="btn-search search-toggle"><svg class="icon" width="16" height="16"><use xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="#icon-search"></use></svg> Search</button></li>
           <li><a href="#nav" class="nav-menu nav-skip"><svg version="1.1" class="icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px" viewBox="0 0 20 20" xml:space="preserve"><line class="ni ni1" stroke-width="2" stroke-linecap="square" stroke-miterlimit="10" x1="0.98" y1="2" x2="18.94" y2="2" /><line class="ni ni2" stroke-width="2" stroke-linecap="square" stroke-miterlimit="10" x1="0.98" y1="8.69" x2="18.94" y2="8.69" /></svg><span class="ni ni3">Menu</span></a></li>
         </ul>
@@ -90,13 +90,20 @@
       <div class="page-header"></div>
       <main class="page-main block-center" role="main">
         <ol class="breadcrumbs">
-          <li><a href="/">Home</a> › </li>
+          <li><a href="index.html">Home</a> › </li>
           <li><a href="weather_report.html">Weather</a> › </li>
           <li>Page Title</li>
         </ol>
-        <h1 class="page-title">Weather</h1>
+        <h1 class="page-title"> Weather</h1>
         <!-- Page Content -->
-        <p></p>
+        <p>{{ status }} and {{ temp }} &deg; </p>
+        <p>Fells like {{ feels like }} &deg; </p>
+
+        <form action='/weather'>
+            <input type="text" name="city" id="city"
+            placeholder="Enter a City Name" />
+            <button type="submit">Submit</button>
+        </form>
         <p> </p>
       </main>
       <div class="page-sidebar">
@@ -142,26 +149,17 @@
         <meta property="parentOrganization" resource="#parentorg" content="University of Notre Dame">
         <!-- Organizational Breadcrumbs -->
         <ul class="footer-breadcrumbs">
-          <li><a href="cse.nd.edu">Department of Computer Science and Engineering</a></li>
+          <li><a href="https://engineering.nd.edu">College of Engineering</a></li>
         </ul>
-        <p><a href="/" class="site-link" property="url"><span property="name">Lawn Logic</span></a></p>
+        <p><a href="index.html" class="site-link" property="url"><span property="name">Lawn Logic</span></a></p>
         <div class="footer-contacts">
           <p class="contact-info">
             <span class="address" property="address" typeof="PostalAddress">
               <span property="streetAddress">Department of Computer Science and Engineering</span><br>
               <span property="addressLocality">Notre Dame</span>, <span property="addressRegion">IN</span> <span property="postalCode">46556</span> <span property="addressCountry">USA</span>
             </span>
-            <span class="footer-phone" property="telephone" content="+1 (574) 555-1234"><a href="tel:(574)555-1234">(574) 555-1234</a></span>
-            <span class="footer-email" property="email"><a href="mailto:example@nd.edu"></a></span>
+            <span class="footer-website" property="link"><a href="https://cse.nd.edu/">cse.nd.edu</span>
           </p>
-          <nav class="social" aria-label="Site social media navigation" vocab="">
-            <ul>
-              <!-- Site-specific Social Media -->
-              <li><a class="soc-facebook" href="#" rel="noopener" aria-label="Site Name on Facebook"><svg class="icon" width="16" height="16" aria-hidden="true"> <use xlink:href="#icon-facebook"></use> </svg> Facebook</a></li>
-              <li><a class="soc-twitter" href="#" rel="noopener" aria-label="Site Name on Twitter"><svg class="icon" width="16" height="16" aria-hidden="true"> <use xlink:href="#icon-twitter"></use> </svg> Twitter</a></li>
-              <li><a class="soc-instagram" href="#" rel="noopener" aria-label="Site Name on Instagram"><svg class="icon" width="16" height="16" aria-hidden="true"> <use xlink:href="#icon-instagram"></use> </svg> Instagram</a></li>
-            </ul>
-          </nav>
         </div>
         <div property="logo" typeof="ImageObject">
           <meta property="url" content="https://static.nd.edu/images/webclips/default/webclip-60.png">
@@ -192,6 +190,6 @@
     </footer>
   </div><!-- .wrapper -->
   <script src="https://conductor.nd.edu/javascripts/themes/ndt/3.0/ndt.js"></script>
-  <script src="./javascripts/site.js"></script>
+  <script src="../static/site.js"></script>
 </body>
 </html>

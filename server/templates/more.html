@@ -19,7 +19,7 @@
   <meta property="og:type" content="website">
   <meta property="og:url" content="https://site_url">
   <meta property="og:locale" content="en_US">
-  <title>Page Title | Site Name | University of Notre Dame</title>
+  <title>About | Site Name | University of Notre Dame</title>
   <link rel="manifest" href="/manifest.json" crossorigin="use-credentials">
   <link rel="icon" href="/favicon.ico" sizes="any">
   <link rel="icon" href="https://static.nd.edu/images/monogram/monogram.svg" type="image/svg+xml">
@@ -42,17 +42,17 @@
     <header id="header" class="site-header">
       <p class="mark-header"><a href="https://www.nd.edu/">University of Notre Dame</a></p>
       <div class="site-title-group">
-        <p id="site-title" class="site-title"><a href="/" accesskey="1" title="Homepage shortcut key = 1">Site Name</a></p>
+        <p id="site-title" class="site-title"><a href="index.html" accesskey="1" title="Homepage shortcut key = 1">Lawn Logic</a></p>
       </div>
       <!-- Header Search/Nav  -->
       <div class="nav-header">
         <nav id="nav-top" class="nav-top" role="navigation" aria-label="Primary navigation">
           <div id="primary">
             <ul>
-              <li><a href="/" aria-label="Home"><svg class="icon" width="16" height="16"><use xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="#icon-home"></use></svg></a></li>
-              <li><a class="active" href="#">Page A</a></li>
-              <li><a href="#">Page B</a></li>
-              <li><a href="#">Page C</a></li>
+              <li><a href="index.html" aria-label="Home"><svg class="icon" width="16" height="16"><use xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="#icon-home"></use></svg></a></li>
+              <li><a class="active" href="more.html">About</a></li>
+              <li><a href="weather_report.html">Weather</a></li>
+              <li><a href="log_in.html">Log In</a></li>
               <li class="nav-search"><button class="btn-search search-toggle" aria-label="Toggle search"><svg class="icon" width="16" height="16"><use xlink:href="#icon-search"></use></svg></button></li>
             </ul>
             <div class="nav-search-wrapper">
@@ -90,60 +90,24 @@
       <div class="page-header"></div>
       <main class="page-main" role="main">
         <ol class="breadcrumbs">
-          <li><a href="/">Home</a> › </li>
-          <li><a href="#">Parent</a> › </li>
+          <li><a href="index.html">Home</a> › </li>
+          <li><a href="more.html">About</a> › </li>
           <li>Page Title</li>
         </ol>
-        <h1 class="page-title">Page Title</h1>
+        <h1 class="page-title">How it works</h1>
         <div class="grid grid-md-3">
           <div class="page-primary span-md-2">
             <!-- Page Content -->
-            <p>Main page content...</p>
             <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Apud ceteros autem philosophos, qui quaesivit aliquid, tacet; Dempta enim aeternitate nihilo beatior Iuppiter quam Epicurus; Tu vero, inquam, ducas licet, si sequetur; Duo Reges: constructio interrete. Isto modo ne improbos quidem, si essent boni viri. Sed ad illum redeo. </p>
           </div>
           <div class="page-aside">
             <!-- Sidebar Content -->
-            <p>Sidebar content...</p>
-            <p>Ex rebus enim timiditas, non ex vocabulis nascitur. Hoc dixerit potius Ennius: Nimium boni est, cui nihil est mali.</p>
+            <img property="image" src="../static/case_render.png" width="100" height="100" alt="">
+            <p>The Case</p>
+            <p>Made with a bright green color, the outter case is able to blend in with the grass but be noticable enought to remove before mowing.</p>
           </div>
         </div>
       </main>
-      <div class="page-sidebar">
-        <!-- Full Nav -->
-        <nav id="nav" class="nav-site nav-full" role="navigation" aria-label="Primary navigation">
-          <ul class="depth_1">
-            <li class="active"><a href="#">Page A</a>
-              <ul class="depth_2">
-                <li><a href="#">Subpage A</a></li>
-                <!-- Current Page -->
-                <li class="active"><a class="current" href="#">Subpage B</a>
-                  <ul class="nav-level-2 depth_3">
-                    <li><a href="#">Child Page A</a></li>
-                    <li><a href="#">Child Page B</a></li>
-                  </ul>
-                </li>
-                <li><a href="#">Subpage C</a></li>
-              </ul>
-            </li>
-            <li><a href="#">Page B</a></li>
-            <li><a href="#">Page C</a></li>
-          </ul>
-        </nav>
-        <!-- Current section nav -->
-        <nav class="nav-section nav-site" role="navigation" aria-label="Section navigation">
-          <ul class="depth_2">
-            <li><a href="#">Subpage A</a></li>
-            <!-- Current Page -->
-            <li class="active"><a href="#" class="current">Subpage B</a>
-              <ul class="nav-level-2 depth_3">
-                <li><a href="#">Child Page A</a></li>
-                <li><a href="#">Child Page B</a></li>
-              </ul>
-            </li>
-            <li><a href="#">Subpage C</a></li>
-          </ul>
-        </nav>
-      </div>
     </div>
     <!-- Site Footer -->
     <footer id="footer" class="site-footer" role="contentinfo">
@@ -151,31 +115,23 @@
         <meta property="parentOrganization" resource="#parentorg" content="University of Notre Dame">
         <!-- Organizational Breadcrumbs -->
         <ul class="footer-breadcrumbs">
-          <li><a href="#">Parent Unit</a></li>
+          <li><a href="https://engineering.nd.edu">Department of Engineering</a></li>
         </ul>
-        <p><a href="/" class="site-link" property="url"><span property="name">Site Name</span></a></p>
+        <p><a href="index.html" class="site-link" property="url"><span property="name">Lawn Logic</span></a></p>
         <div class="footer-contacts">
           <p class="contact-info">
             <span class="address" property="address" typeof="PostalAddress">
-              <span property="streetAddress">Building Address</span><br>
+              <span property="streetAddress">Department of Computer Science and Engineering</span><br>
               <span property="addressLocality">Notre Dame</span>, <span property="addressRegion">IN</span> <span property="postalCode">46556</span> <span property="addressCountry">USA</span>
             </span>
-            <span class="footer-phone" property="telephone" content="+1 (574) 555-1234">Phone <a href="tel:(574)555-1234">(574) 555-1234</a></span>
-            <span class="footer-email" property="email"><a href="mailto:example@nd.edu">example@nd.edu</a></span>
+            <span class="footer-website" property="link"><a href="https://cse.nd.edu/">cse.nd.edu</span>
           </p>
-          <nav class="social" aria-label="Site social media navigation" vocab="">
-            <ul>
-              <!-- Site-specific Social Media -->
-              <li><a class="soc-facebook" href="#" rel="noopener" aria-label="Site Name on Facebook"><svg class="icon" width="16" height="16" aria-hidden="true"> <use xlink:href="#icon-facebook"></use> </svg> Facebook</a></li>
-              <li><a class="soc-twitter" href="#" rel="noopener" aria-label="Site Name on Twitter"><svg class="icon" width="16" height="16" aria-hidden="true"> <use xlink:href="#icon-twitter"></use> </svg> Twitter</a></li>
-              <li><a class="soc-instagram" href="#" rel="noopener" aria-label="Site Name on Instagram"><svg class="icon" width="16" height="16" aria-hidden="true"> <use xlink:href="#icon-instagram"></use> </svg> Instagram</a></li>
-            </ul>
-          </nav>
+          
         </div>
         <div property="logo" typeof="ImageObject">
           <meta property="url" content="https://static.nd.edu/images/webclips/default/webclip-60.png">
         </div>
-        <p class="copyright"><a href="https://www.nd.edu/copyright/">&copy; CURRENT YEAR</a> <a href="https://www.nd.edu">University of Notre Dame</a></p>
+        <p class="copyright"><a href="https://www.nd.edu/copyright/">&copy; 2023</a> <a href="https://www.nd.edu">University of Notre Dame</a></p>
       </div>
       <div class="footer-parent" property="parentOrganization" typeof="CollegeOrUniversity" resource="#parentorg">
         <meta property="name" content="University of Notre Dame">
@@ -209,6 +165,6 @@
     </footer>
   </div><!-- .wrapper -->
   <script src="https://conductor.nd.edu/javascripts/themes/ndt/3.0/ndt.js"></script>
-  <script src="./javascripts/site.js"></script>
+  <script src="../static/site.js"></script>
 </body>
 </html>
