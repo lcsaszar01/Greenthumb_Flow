@@ -2,7 +2,7 @@
 #include <DHT.h>
 #include <Wire.h>
 #include "Si115X.h"
-#include <SoftwareSerial.h>
+#include <ArduinoJson.h>
 
 /* Pinout:
 - A0 -> moisture sensor output
@@ -15,8 +15,11 @@
 
 #define RXPIN 8
 #define TXPIN 9
-#define REC_PACKET_LENGTH 32 // 1 byte packet ID, 28 bytes of sensor data, 1 byte solenoid ctl ack, 1 byte checksum, 1 byte stop_byte
-#define TRANS_PACKET_LENGTH 6 // 1 byte packet ID, 1 byte solenoid state, 2 bytes ON length, 1 byte checksum, 1 byte stop_byte
+#define SENS_SERIAL_BUFSIZ 150
+#define ERR_BUFSIZ 100
+#define TX_PACKET_LENGTH SENS_SERIAL_BUFSIZ + 3 // 2 char packet ID, 150 bytes of sensor data, leaving out 2 byte checksum for now, 1 char stop_byte
+#define TX_ACK_LENGTH ERR_BUFSIZ + 2 // 2 char packet ID plus error/OK msg
+#define RX_PACKET_LENGTH 8 // 2 char packet ID, 1 char solenoid state, 4 char ON length, leaving out 2 byte checksum for now, 1 char stop_byte
 #define STOP_BYTE '\0'
 #define MOISTPIN 0
 #define DRY_BOUND 523 // from calibration - soil moisture sensor output when just exposed to air - our humidity = 0%RH
@@ -25,16 +28,21 @@
 #define DHTTYPE DHT22 // hum temp sensor type
 #define DHTPIN 4
 #define SOLENOIDPIN 7
-#define FLOW_STATE 0
-#define CUTOFF_STATE 1
+#define FLOW_STATE 1
+#define CUTOFF_STATE 0
 
 
 // Initialize objects
-SoftwareSerial BTSerial(RXPIN, TXPIN);
+//SoftwareSerial BTSerial(RXPIN, TXPIN);
 DHT dht(DHTPIN, DHTTYPE);
 Si115X si1151;
 
 // declare globals
+int Ntxpct = 0;
+int curr_rxpct;
+int prev_rxpct = 99;
+
+char err_msg[ERR_BUFSIZ] = "Error.";
 
 char last_trans_ID_recieved;
 char last_trans_ID_transmitted;
@@ -52,7 +60,6 @@ float avg_ph = 0;
 int n_readings = 0; // will incrementally go up every time a reading is taken before it's transmitted
 
 // timing related:
-//unsigned long begin_time;
 unsigned long check_sens_timer;
 const unsigned long check_sens_interval = 1000; // in milliseconds
 unsigned long transmit_sens_timer;
@@ -70,13 +77,10 @@ void setup() {
 
   Serial.begin(9600); // start serial for output
 
-  last_trans_ID_recieved = (char)0x7F;
-  last_trans_ID_transmitted = (char)0x7F;
-
   pinMode(SOLENOIDPIN, OUTPUT);
 
   // Bluetooth HC-05
-  BTSerial.begin(38400); // why this
+  //BTSerial.begin(38400); // why this
 
   // hum/temp
   dht.begin();
@@ -95,9 +99,9 @@ void setup() {
   solenoid_state_duration = 1000;
 
   // set timers
-  set_timer(check_sens_timer);
-  set_timer(transmit_sens_timer);
-  set_timer(solenoid_ctl_timer);
+  check_sens_timer = set_timer();
+  transmit_sens_timer = set_timer();
+  solenoid_ctl_timer = set_timer();
 }
 
 void loop() {
@@ -107,32 +111,23 @@ void loop() {
   // -- we think the buffer is 63 bytes, and FIFO
   // -- data is lost with a delay longer than 800 ms
   // if solenoid control message received, turn solenoid_ctl_received on, change vals of solenoid_state, and solenoid_state_duration if applic., set solenoid_state_ticker to 0, verify that solenoid_state_duration % solenoid_ctl_interval = 0 or round to make it so
-  /*(if (BTSerial.available()) {
-    char byte_read = BTSerial.read();
-  }*/
-  if (Serial.available()) {
-    char msg = Serial.read();
-    if (msg == 'f') {
-      solenoid_state = FLOW_STATE;
-      solenoid_ctl_received = 1;
-      solenoid_state_duration = 3000;
-    } else if (msg == 'c') {
-      solenoid_state = CUTOFF_STATE;
-      solenoid_ctl_received = 1;
-    }
-  }
 
+  if (Serial.available()) {
+    int err_code = read_packet();
+    transmit_ack();
+  }
 
   // SOLENOID CONTROL
   // check if it's been 1 solenoid_ctl_interval since the last time we accessed solenoid control
   if (check_timer(solenoid_ctl_timer, solenoid_ctl_interval)) {
+    solenoid_ctl_timer = set_timer();
 
     // Access solenoid control
 
     // If the state has changed via bluetooth instruction instead of timeout (done directly after bluetooth transmission), call set_solenoid_state, reset ticker to 0
     if (solenoid_ctl_received) {
       set_solenoid_state(solenoid_state);
-      set_timer(solenoid_state_timer);
+      solenoid_state_timer = set_timer();
       solenoid_ctl_received = 0;
 
     // Otherwise, check for timeout of FLOW_STATE
@@ -145,13 +140,13 @@ void loop() {
       }
     }
     
-    Serial.println("solenoid");
-    set_timer(solenoid_ctl_timer);
   }
   
   // SENSORS
   // check if it's been 1 check_sens_interval since the last time we accessed the sensors
   if (check_timer(check_sens_timer, check_sens_interval)) {
+    check_sens_timer = set_timer();
+
     // get readings
     read_moist();
     read_hum_temp();
@@ -172,29 +167,25 @@ void loop() {
     avg_ph = update_avg(ph, avg_ph, n_readings);
 
     // output to serial monitor
-    output_serial();
-
-    Serial.println("check");
-    set_timer(check_sens_timer);
+    //output_serial();
   }
 
-  // Bluetooth transmission
-  // send acks
-
-  // send sensor info
+  // send sensor info to controller
   if (check_timer(transmit_sens_timer, transmit_sens_interval)) {
-    output_serial_transmission();
+    transmit_sens_timer = set_timer();
+
+    // create json, serialize, and send to controller
+    transmit_sensor();
+
     n_readings = 0;
-    Serial.println("trans");
-    set_timer(transmit_sens_timer);
   }
 }
 
 /*    ###############################   TIMING     #########################   */
 
-void set_timer(unsigned long timer) {
-  timer = millis();
-  Serial.println(timer);
+unsigned long set_timer() {
+  unsigned long timer = millis();
+  return timer;
 }
 
 bool check_timer(unsigned long timer, unsigned long interval) {
@@ -206,60 +197,122 @@ bool check_timer(unsigned long timer, unsigned long interval) {
 
 /*    ###############################   BLUETOOTH  #########################   */
 
-byte checksum(char *s, int length) {
+/*byte checksum(char *s, int length) {
   byte c = 0;
   for (int ic = 0; ic < length; ic++) {
     c^= *s++;
   }
   return c;
-}
+}*/
 
-bool read_packet() {
-  /*String buffer = BTSerial.readBytesUntil(STOP_BYTE);
+int read_packet() {
+
+  String buffer;
+  char* rx_buffer;
+
+  sprintf(err_msg, "OK");
+
+  if (Serial.available()) {
+    buffer = Serial.readStringUntil(STOP_BYTE);
+    //rx_buffer = BTSerial.readBytesUntil(STOP_BYTE);
+  } else {
+    sprintf(err_msg, "Serial unavailable");
+    return 1;
+  }
 
   // check for incorrect length
-  if (buffer.length() != REC_PACKET_LENGTH) {
-    Serial.print("BT Error: packet received has unexpected length of ");
-    Serial.println(buffer.length());
-    return false;
+  if (buffer.length() != RX_PACKET_LENGTH) {
+    sprintf(err_msg, "BT Error: packet received has unexpected length of %d", buffer.length());
+    return 2;
   }
 
   // check checksum
-  int checksum_index = REC_PACKET_LENGTH - 1;
+  /*int checksum_index = REC_PACKET_LENGTH - 1;
   if (checksum(buffer.substring(0,checksum_index)) != buffer[checksum_index]) {
     Serial.println("BT Error: packet received checksum does not match");
     return false;
-  }
+  }*/
+
+  rx_buffer = buffer.c_str();
 
   // check transmission ID
-  byte trans_ID = buffer[0];
-  if (!((trans_ID == (last_trans_id_received && 0x01)) || ((trans_ID == 0x01) && (last_trans_id_received == 0x7F)))) {
-    Serial.print("BT Error: packet dropped. Previous transmission received: #");
-    Serial.print(last_trans_id_received, HEX);
-    Serial.print(", Transmission just received: #");
-    Serial.print(trans_ID, HEX);
-    return false;
+  sscanf(rx_buffer, "%2d", &curr_rxpct);
+  if (!((curr_rxpct == prev_rxpct+1) || (curr_rxpct == 0 && prev_rxpct == 99))) {
+    sprintf(err_msg, "BT Error: packet dropped. Previous transmission received: #%d, Transmission just received: #%d", prev_rxpct, curr_rxpct);
   }
 
   // Update solenoid ctl
-  char solenoid_state_indic = buffer[1];
-  if (solenoid_state_indic = '0') {
+  bool curr_solenoid_state = solenoid_state;
+  char rx_solenoid_state = rx_buffer[2];
+  if (rx_solenoid_state == '0') {
     solenoid_state = 0;
-  } else if (solenoid_state_indic = '1') {
+  } else if (rx_solenoid_state == '1') {
     solenoid_state = 1;
   } else {
-    Serial.println("BT Error: Invalid solenoid ctl received");
-    return false;
+    sprintf(err_msg, "BT Error: Invalid solenoid ctl received");
+    return 3;
   }
 
-  int
-
-  // verify that solenoid_state_duration % solenoid_ctl_interval = 0 or round to make it so
+  int new_duration;
+  int rem;
+  if (solenoid_state) {
+    if (sscanf(rx_buffer+3, "%4d", &new_duration) == 1) {
+      solenoid_state_duration = ((new_duration + solenoid_ctl_interval/2) / solenoid_ctl_interval) * solenoid_ctl_interval; // should round it to nearest multiple of solenoid_ctl_interval
+    } else {
+      sprintf(err_msg, "Could not parse solenoid state length");
+      solenoid_state = curr_solenoid_state; //reset
+      return 4;
+    }
+  }
 
   solenoid_ctl_received = 1;
-  solenoid_state_ticker = 0;*/
+  prev_rxpct = curr_rxpct;
 
-  return true;
+  return 0;
+}
+
+void increment_Ntranspacket() {
+  Ntxpct++;
+
+  // Keep under 100 so we only take up 2 chars in packet
+  if (Ntxpct >= 100) {
+    Ntxpct = 0;
+  }
+}
+
+void transmit_ack() {
+
+  char tx_ack[TX_ACK_LENGTH];
+
+  sprintf(tx_ack, "%2d%s", Ntxpct, err_msg);
+
+  Serial.println(tx_ack);
+
+  increment_Ntranspacket();
+}
+
+void transmit_sensor() {
+
+  StaticJsonDocument<200> doc;
+
+  doc["moisture"] = avg_moist;
+  doc["humidity"] = avg_hum;
+  doc["temperature"] = avg_temp;
+  doc["ir"] = avg_ir;
+  doc["vis"] = avg_vis;
+  doc["uv"] = avg_uv;
+  doc["ph"] = avg_ph;
+
+  char serial_json[SENS_SERIAL_BUFSIZ];
+  serializeJson(doc, serial_json);
+
+  char tx_packet[TX_PACKET_LENGTH];
+
+  sprintf(tx_packet, "%2d%s", Ntxpct, serial_json);
+
+  Serial.println(tx_packet);
+
+  increment_Ntranspacket();
 }
 
 /*    ###############################   SENSOR READINGS AND OUTPUT  #########################   */
@@ -349,10 +402,8 @@ void output_serial_transmission() {
 // turns solenoid off or on
 void set_solenoid_state(bool state) {
   if (state == CUTOFF_STATE) {
-    //Serial.println("solenoid off!");
-    digitalWrite(SOLENOIDPIN, HIGH);
-  } else {
-    //Serial.println("solenoid on!");
     digitalWrite(SOLENOIDPIN, LOW);
+  } else {
+    digitalWrite(SOLENOIDPIN, HIGH);
   }
 }
