@@ -13,12 +13,13 @@
 - 9  -> bluetooth transmit pin
 */
 
+#define MYID 'A'
 #define RXPIN 8
 #define TXPIN 9
 #define SENS_SERIAL_BUFSIZ 150
 #define ERR_BUFSIZ 100
-#define TX_PACKET_LENGTH SENS_SERIAL_BUFSIZ + 3 // 2 char packet ID, 150 bytes of sensor data, leaving out 2 byte checksum for now, 1 char stop_byte
-#define TX_ACK_LENGTH ERR_BUFSIZ + 2 // 2 char packet ID plus error/OK msg
+#define TX_PACKET_LENGTH SENS_SERIAL_BUFSIZ + 4 // 1 char sensor ID, 2 char packet ID, 150 bytes of sensor data, leaving out 2 byte checksum for now, 1 char stop_byte
+#define TX_ACK_LENGTH ERR_BUFSIZ + 3 // 1 char sensor ID, 2 char packet ID plus error/OK msg
 #define RX_PACKET_LENGTH 8 // 2 char packet ID, 1 char solenoid state, 4 char ON length, leaving out 2 byte checksum for now, 1 char stop_byte
 #define STOP_BYTE '\0'
 #define MOISTPIN 0
@@ -284,7 +285,7 @@ void transmit_ack() {
 
   char tx_ack[TX_ACK_LENGTH];
 
-  sprintf(tx_ack, "%2d%s", Ntxpct, err_msg);
+  sprintf(tx_ack, "%c%2d%s", MYID, Ntxpct, err_msg);
 
   Serial.println(tx_ack);
 
@@ -308,7 +309,7 @@ void transmit_sensor() {
 
   char tx_packet[TX_PACKET_LENGTH];
 
-  sprintf(tx_packet, "%2d%s", Ntxpct, serial_json);
+  sprintf(tx_packet, "%c%2d%s", MYID, Ntxpct, serial_json);
 
   Serial.println(tx_packet);
 
