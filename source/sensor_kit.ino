@@ -13,14 +13,11 @@
 - 9  -> bluetooth transmit pin
 */
 
-#define MYID 'A'
+#define MYID "A"
 #define RXPIN 8
 #define TXPIN 9
-#define SENS_SERIAL_BUFSIZ 150
 #define ERR_BUFSIZ 100
-#define TX_PACKET_LENGTH SENS_SERIAL_BUFSIZ + 4 // 1 char sensor ID, 2 char packet ID, 150 bytes of sensor data, leaving out 2 byte checksum for now, 1 char stop_byte
-#define TX_ACK_LENGTH ERR_BUFSIZ + 3 // 1 char sensor ID, 2 char packet ID plus error/OK msg
-#define RX_PACKET_LENGTH 8 // 2 char packet ID, 1 char solenoid state, 4 char ON length, leaving out 2 byte checksum for now, 1 char stop_byte
+#define PACKET_BUFSIZ 200
 #define STOP_BYTE '\0'
 #define MOISTPIN 0
 #define DRY_BOUND 523 // from calibration - soil moisture sensor output when just exposed to air - our humidity = 0%RH
@@ -198,72 +195,58 @@ bool check_timer(unsigned long timer, unsigned long interval) {
 
 /*    ###############################   BLUETOOTH  #########################   */
 
-/*byte checksum(char *s, int length) {
-  byte c = 0;
-  for (int ic = 0; ic < length; ic++) {
-    c^= *s++;
-  }
-  return c;
-}*/
-
 int read_packet() {
 
-  String buffer;
-  char* rx_buffer;
+  char rx_buffer[PACKET_BUFSIZ];
+  char c;
+  int nchar = 0;
 
   sprintf(err_msg, "OK");
 
-  if (Serial.available()) {
-    buffer = Serial.readStringUntil(STOP_BYTE);
-    //rx_buffer = BTSerial.readBytesUntil(STOP_BYTE);
-  } else {
-    sprintf(err_msg, "Serial unavailable");
+  while (Serial.available()) {
+    c = Serial.read();
+    if (c != '\n') {
+      rx_buffer[nchar] = c;
+      nchar++;
+    }
+  }
+  rx_buffer[nchar] = '\0';
+  
+  if (nchar == 0) {
+    sprintf(err_msg, "Failed to read");
     return 1;
   }
 
-  // check for incorrect length
-  if (buffer.length() != RX_PACKET_LENGTH) {
-    sprintf(err_msg, "BT Error: packet received has unexpected length of %d", buffer.length());
+  Serial.println(rx_buffer); // debug
+
+  // Deserialize the JSON document
+  StaticJsonDocument<100> doc;
+  DeserializationError error = deserializeJson(doc, rx_buffer);
+
+  // Test if parsing succeeds.
+  if (error) {
+    sprintf(err_msg, "deserializeJson() failed: %s", error.f_str());
     return 2;
   }
 
-  // check checksum
-  /*int checksum_index = REC_PACKET_LENGTH - 1;
-  if (checksum(buffer.substring(0,checksum_index)) != buffer[checksum_index]) {
-    Serial.println("BT Error: packet received checksum does not match");
-    return false;
-  }*/
-
-  rx_buffer = buffer.c_str();
-
   // check transmission ID
-  sscanf(rx_buffer, "%2d", &curr_rxpct);
+  curr_rxpct = doc["packet number"];
   if (!((curr_rxpct == prev_rxpct+1) || (curr_rxpct == 0 && prev_rxpct == 99))) {
     sprintf(err_msg, "BT Error: packet dropped. Previous transmission received: #%d, Transmission just received: #%d", prev_rxpct, curr_rxpct);
   }
 
   // Update solenoid ctl
-  bool curr_solenoid_state = solenoid_state;
-  char rx_solenoid_state = rx_buffer[2];
-  if (rx_solenoid_state == '0') {
-    solenoid_state = 0;
-  } else if (rx_solenoid_state == '1') {
-    solenoid_state = 1;
+  bool rx_solenoid_state = doc["solenoid state"];
+  if (rx_solenoid_state == 0 || rx_solenoid_state == 1) {
+    solenoid_state = rx_solenoid_state;
   } else {
     sprintf(err_msg, "BT Error: Invalid solenoid ctl received");
     return 3;
   }
 
-  int new_duration;
-  int rem;
   if (solenoid_state) {
-    if (sscanf(rx_buffer+3, "%4d", &new_duration) == 1) {
-      solenoid_state_duration = ((new_duration + solenoid_ctl_interval/2) / solenoid_ctl_interval) * solenoid_ctl_interval; // should round it to nearest multiple of solenoid_ctl_interval
-    } else {
-      sprintf(err_msg, "Could not parse solenoid state length");
-      solenoid_state = curr_solenoid_state; //reset
-      return 4;
-    }
+    int new_duration = doc["solenoid on duration"];
+    solenoid_state_duration = ((new_duration + solenoid_ctl_interval/2) / solenoid_ctl_interval) * solenoid_ctl_interval; // should round it to nearest multiple of solenoid_ctl_interval
   }
 
   solenoid_ctl_received = 1;
@@ -283,10 +266,15 @@ void increment_Ntranspacket() {
 
 void transmit_ack() {
 
-  char tx_ack[TX_ACK_LENGTH];
+  StaticJsonDocument<100> doc;
 
-  sprintf(tx_ack, "%c%2d%s", MYID, Ntxpct, err_msg);
+  doc["id"] = MYID;
+  doc["packet number"] = Ntxpct;
+  doc["transmission type"] = "Ack";
+  doc["message"] = err_msg;
 
+  char tx_ack[PACKET_BUFSIZ];
+  serializeJson(doc, tx_ack);
   Serial.println(tx_ack);
 
   increment_Ntranspacket();
@@ -294,8 +282,11 @@ void transmit_ack() {
 
 void transmit_sensor() {
 
-  StaticJsonDocument<200> doc;
+  StaticJsonDocument<100> doc;
 
+  doc["id"] = MYID;
+  doc["packet number"] = Ntxpct;
+  doc["transmission type"] = "Sensor Data";
   doc["moisture"] = avg_moist;
   doc["humidity"] = avg_hum;
   doc["temperature"] = avg_temp;
@@ -304,13 +295,8 @@ void transmit_sensor() {
   doc["uv"] = avg_uv;
   doc["ph"] = avg_ph;
 
-  char serial_json[SENS_SERIAL_BUFSIZ];
-  serializeJson(doc, serial_json);
-
-  char tx_packet[TX_PACKET_LENGTH];
-
-  sprintf(tx_packet, "%c%2d%s", MYID, Ntxpct, serial_json);
-
+  char tx_packet[PACKET_BUFSIZ];
+  serializeJson(doc, tx_packet);
   Serial.println(tx_packet);
 
   increment_Ntranspacket();

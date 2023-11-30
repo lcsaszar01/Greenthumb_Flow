@@ -19,8 +19,7 @@ void setup()
 // I had an idea to break up the day into 6 4-hr time blocks, where at the start of each time block you either water x amount or don't. Or, water at a certain pace over the time block. First way probably works fine?
 // Or 12 2-hr blocks
 // Solenoid control messages are of the form:
-// {2 char transmission ID, 0-99. See added Ntxpct code}{1 char 0 or 1, for whether we want the solenoid off (closed) or on (flow)}{4 character duration of watering if prev field is 1}{null character}
-// we will need to adjust the third field depending on how large of a number we figure out we need because obviously right now it's max 9.999 seconds
+//"{\"packet number\":0,\"solenoid state\":1, \"solenoid on duration\":2000}"
 
 // Relays sensor data to server to be logged
 // taking input from 2 or more sensors
