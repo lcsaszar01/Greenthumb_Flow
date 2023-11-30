@@ -1,9 +1,25 @@
+#!/home/kpmealey/miniconda3/envs/lawnlogic/bin/python3
+
+
 from flask import Flask, render_template, request
 from weather import forcast
 from markupsafe import escape
 from markupsafe import Markup
+import schedule
+import time
+import pandas as pd
+import json
 
 app = Flask(__name__)
+
+app = Flask(__name__)
+app.config.from_mapping(
+    CELERY=dict(
+        broker_url="redis://localhost",
+        result_backend="redis://localhost",
+        task_ignore_result=True,
+    ),
+)
 
 @app.route('/')
 @app.route('/index')
@@ -14,6 +30,7 @@ def index(name=None):
 def get_weather():
     city = request.args.get('city')
     weather_data = forcast()
+
     return render_template(
         "weather.html",
         
@@ -23,5 +40,12 @@ def get_weather():
     )
 
 
+# first three lines given by ChatGPT -- untested
+@app.route('/receive_serial_data', methods=['POST'])
+def receive_serial_data():
+    sensor_data = request.json  # Assuming data is sent as JSON
+    
+
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=8000)   
+    celery_init_app(app)
+    app.run(host="0.0.0.0", port=8000)
