@@ -1,19 +1,20 @@
+#!/home/kpmealey/git/Greenthumb_Flow/server/server_venv/bin/python3
+
 from celery import Celery, Task
 from flask import Flask
+from celery.schedules import crontab
+import time
 
-def celery_init_app(app: Flask) -> Celery:
-    class FlaskTask(Task):
-        def __call__(self, *args: object, **kwargs: object) -> object:
-            with app.app_context():
-                return self.run(*args, **kwargs)
+celery = Celery('tasks', broker='redis://localhost:6379/0')
 
-    celery_app = Celery(app.name, task_cls=FlaskTask)
-    celery_app.config_from_object('celery_config')
-    celery_app.set_default()
-    app.extensions["celery"] = celery_app
-    return celery_app
+# This can be the watering schedule creation and watering data saving
+@celery.task
+def background_task():
+    time.sleep(10)
+    print("Background task completed!")
 
-@celery_app.task
-def scheduled_job():
-    print("Executing scheduled job for receiving serial data.")
-    # Call your function to receive serial data or add any other logic here
+# This can be the weather getting
+@celery.task(bind=True, name='tasks.periodic_task', default_retry_delay=300, max_retries=3)
+#def periodic_task(self):
+def periodic_task():
+    print("Periodic task executed")

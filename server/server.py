@@ -1,4 +1,4 @@
-#!/home/kpmealey/miniconda3/envs/lawnlogic/bin/python3
+#!/home/kpmealey/git/Greenthumb_Flow/server/server_venv/bin/python3
 
 
 from flask import Flask, render_template, request
@@ -9,22 +9,33 @@ import schedule
 import time
 import pandas as pd
 import json
+from celery import Celery, Task
+from celery.schedules import crontab
+import tasks
 
 app = Flask(__name__)
-
-app = Flask(__name__)
-app.config.from_mapping(
-    CELERY=dict(
-        broker_url="redis://localhost",
-        result_backend="redis://localhost",
-        task_ignore_result=True,
-    ),
+celery = Celery(app.name, broker='redis://localhost:6379/0', include=['tasks'])
+app.config.update(
+    CELERY_BROKER_URL='redis://localhost:6379/0',
+    CELERY_RESULT_BACKEND='redis://localhost:6379/1'
 )
+app.config['CELERYBEAT_SCHEDULE'] = {
+    'periodic-task': {
+        'task': 'tasks.periodic_task',
+        'schedule': crontab(minute=50, hour=17),
+        #'schedule': 30.0,
+        'options': {
+            'expires':15.0,
+        },
+    },
+}
+app.config['CELERY_TIMEZONE'] = 'America/New_York'
 
 @app.route('/')
 @app.route('/index')
 def index(name=None):
-    return render_template('index.html')
+    result = tasks.background_task.delay()
+    return render_template('index.html', task_id=result.id)
 
 @app.route('/weather')
 def get_weather():
@@ -47,5 +58,4 @@ def receive_serial_data():
     
 
 if __name__ == "__main__":
-    celery_init_app(app)
     app.run(host="0.0.0.0", port=8000)
