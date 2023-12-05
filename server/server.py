@@ -14,27 +14,11 @@ from celery.schedules import crontab
 import tasks
 
 app = Flask(__name__)
-celery = Celery(app.name, broker='redis://localhost:6379/0', include=['tasks'])
-app.config.update(
-    CELERY_BROKER_URL='redis://localhost:6379/0',
-    CELERY_RESULT_BACKEND='redis://localhost:6379/1'
-)
-app.config['CELERYBEAT_SCHEDULE'] = {
-    'periodic-task': {
-        'task': 'tasks.periodic_task',
-        'schedule': crontab(minute=50, hour=17),
-        #'schedule': 30.0,
-        'options': {
-            'expires':15.0,
-        },
-    },
-}
-app.config['CELERY_TIMEZONE'] = 'America/New_York'
+app.config.from_pyfile('celeryconfig.py')
 
 @app.route('/')
 @app.route('/index')
 def index(name=None):
-    result = tasks.background_task.delay()
     return render_template('index.html', task_id=result.id)
 
 @app.route('/weather')

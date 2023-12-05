@@ -5,16 +5,19 @@ from flask import Flask
 from celery.schedules import crontab
 import time
 
-celery = Celery('tasks', broker='redis://localhost:6379/0')
-
-# This can be the watering schedule creation and watering data saving
-@celery.task
-def background_task():
-    time.sleep(10)
-    print("Background task completed!")
+celery = Celery('tasks', broker='redis://localhost:6379/0', backend='redis://localhost:6379/1')
 
 # This can be the weather getting
-@celery.task(bind=True, name='tasks.periodic_task', default_retry_delay=300, max_retries=3)
-#def periodic_task(self):
-def periodic_task():
-    print("Periodic task executed")
+@celery.task
+def retrieve_weather():
+    print("Retrieved weather data!")
+
+# This can be the watering schedule creation and watering data saving
+@celery.task()
+def schedule_watering():
+    print("Created and save watering data!")
+
+@celery.on_after_configure.connect
+def setup_periodic_tasks(sender, **kwargs):
+    sender.add_periodic_task(10.0, retrieve_weather.s(), name='weather: add every 10')
+    sender.add_periodic_task(30.0, schedule_watering.s(), name='water: add every 30')
