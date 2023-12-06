@@ -4,11 +4,14 @@ from celery import Celery, Task
 from flask import Flask
 from celery.schedules import crontab
 import time
+import json
+from datetime import datetime
 import os
 import pandas as pd
 import requests
 
-celery = Celery('tasks', broker='redis://localhost:6379/0', backend='redis://localhost:6379/1')
+celery = Celery('tasks', broker = 'redis://localhost:6379/0', backend = 'redis://localhost:6379/1')
+celery.conf.timezone = 'America/New_York'
 
 # This can be the weather getting
 @celery.task
@@ -16,19 +19,35 @@ def retrieve_weather():
     forcast()
     print("Retrieved weather data!")
 
-# This can be the watering schedule creation and watering data saving
+# sends watering control messages to controller
+@celery.task
+def send_watering_msg(zone, amount):
+    print(f'telling controller to tell zone {zone} board to let out {amount} L')
+
+# schedules watering control messages that go to controller to get forwarded
 @celery.task()
-def schedule_watering():
-    # fine tune neural net
-    # get result
-    # add new watering tasks
-    print("Created and save watering data!")
+def schedule_watering(sender, **kwargs):
+    # get json obj from ../database/watering_schedule.json
+    with open('../database/watering_schedule.json', 'r') as json_file:
+        data = json.load(json_file)
+
+    # check if date is current, stall if not
+    while data["date"] != datetime.now().strftime('%Y-%m-%d'):
+        time.sleep(60.0) # check every minute for an update
+
+    # maybe implement some timeout...
+
+    # now that it's updated, queue tasks to the controller
+    for zone_dict in data["zones"]:
+        zone = zone_dict["zone"]
+        for hour, amount in enumerate(zone_dict["watering_schedule"]):
+            if amount > 0:
+                sender.add_periodic_task(crontab(minute=0, hour=hour), send_watering_msg.s(zone, amount), name=f'*zone {zone} water at {hour:2}:00*')
 
 @celery.on_after_configure.connect
 def setup_periodic_tasks(sender, **kwargs):
-    sender.add_periodic_task(60.0, retrieve_weather.s(), name='weather: add every 1 minute')
-    sender.add_periodic_task(30.0, schedule_watering.s(), name='water: add every 30')
-
+    sender.add_periodic_task(60.0*30.0, retrieve_weather(), name='weather: add every 30 minutes')
+    sender.add_periodic_task(crontab(minute=0, hour=0), schedule_watering(sender), name='water: add at midnight')
 
 def forcast(city="South Bend"):
     # Enter your API key here
