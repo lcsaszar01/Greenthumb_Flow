@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/home/kpmealey/miniconda3/envs/lawnlogic/bin/python3
 
 '''Template for the code taken from https://www.geeksforgeeks.org/python-find-current-weather-of-any-city-using-openweathermap-api/
 
