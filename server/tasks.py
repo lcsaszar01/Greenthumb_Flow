@@ -19,10 +19,20 @@ def retrieve_weather():
     forcast()
     print("Retrieved weather data!")
 
-# sends watering control messages to controller
+# sends watering control message to contoller -- can be used by manual override
 @celery.task
-def send_watering_msg(zone, amount):
-    print(f'telling controller to tell zone {zone} board to let out {amount} L')
+def send_watering_msg(zone, solenoid_state, solenoid_on_duration):
+    print(f'\{\"zone\":{zone}, \"solenoid state\":{solenoid_state}, \"solenoid on duration\":{solenoid_on_duration}\}')
+
+# sends scheduled watering control messages to controller
+@celery.task
+def send_scheduled_watering_msg(zone, amount):
+    # get json obj from ../database/rate_conversions.json
+    with open('../database/rate_conversions.json', 'r') as json_file:
+        data = json.load(json_file)
+    conv = data["zone"]
+    duration = amount/conv
+    print(f'\{\"zone\":{zone}, \"solenoid state\":1, \"solenoid on duration\":{duration}\}')
 
 # schedules watering control messages that go to controller to get forwarded
 @celery.task()
@@ -42,7 +52,7 @@ def schedule_watering(sender, **kwargs):
         zone = zone_dict["zone"]
         for hour, amount in enumerate(zone_dict["watering_schedule"]):
             if amount > 0:
-                sender.add_periodic_task(crontab(minute=0, hour=hour), send_watering_msg.s(zone, amount), name=f'*zone {zone} water at {hour:2}:00*')
+                sender.add_periodic_task(crontab(minute=0, hour=hour), send_scheduled_watering_msg.s(zone, amount), name=f'*zone {zone} water at {hour:2}:00*')
 
 @celery.on_after_configure.connect
 def setup_periodic_tasks(sender, **kwargs):
