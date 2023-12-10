@@ -27,7 +27,7 @@ def get_weather():
     weather_data = forcast()
 
     return render_template(
-        "weather.html",
+        "weather_report.html",
         
         status=weather_data[0]["discrip[tion]"].capitalize(),
         temp=f"{weather_data['main']['temp']:.1f}",
@@ -39,7 +39,7 @@ def get_weather():
 @app.route('/receive_serial_data', methods=['POST'])
 def receive_serial_data():
     sensor_data = request.json  # Assuming data is sent as JSON
-    
+
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=8000)
+    app.run()
