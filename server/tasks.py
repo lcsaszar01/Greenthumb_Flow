@@ -9,6 +9,11 @@ from datetime import datetime
 import os
 import pandas as pd
 import requests
+import sys
+sys.path.insert(0, '../ml_tasks')
+from make_csvs import make_csvs
+from finetune_model import finetune_model
+from  create_watering_schedule import create_watering_schedule
 
 celery = Celery('tasks', broker = 'redis://localhost:6379/0', backend = 'redis://localhost:6379/1')
 timezone = 'America/New_York'
@@ -23,6 +28,11 @@ forecast_path = f"{data_folder_path}/forecast.json"
 def retrieve_weather():
     get_current_weather()
     print("Retrieved weather data!")
+
+@celery.task
+def request_sensor_data(zone):
+    message = {"id":"SERV", "packet number":0, "type":"request", "request_type":"sensor"}
+    print(json.dumps(message))
 
 # sends watering control message to contoller -- can be used by manual override
 @celery.task
@@ -39,6 +49,21 @@ def send_scheduled_watering_msg(zone, amount):
 # schedules watering control messages that go to controller to get forwarded
 @celery.task()
 def schedule_watering(sender, **kwargs):
+
+    # update forecast.json
+    forecast = get_weather_forecast()
+
+    # get sunrise string (needed in 'record watering data')
+    sunrise_utc = forecast["city"]["sunrise"]
+    timezone = forecast["city"]["timezone"] # shift in seconds from UTC
+    sunrise = datetime.utcfromtimestamp(sunrise+timezone).strftime('%Y-%m-%d %H:%M:%S')
+    
+    # call finetune_model.py
+    finetune_model()
+
+    # call create_watering_schedule.py
+    create_watering_schedule()
+
     # get json obj from ../database/watering_schedule.json
     with open('../database/watering_schedule.json', 'r') as json_file:
         data = json.load(json_file)
@@ -56,36 +81,33 @@ def schedule_watering(sender, **kwargs):
         if amount > 0:
             sender.add_periodic_task(crontab(minute=time.minute, hour=time.hour), send_scheduled_watering_msg.s(zone, amount), name=f'*zone {zone} water at {time.hour:2}:{time.minute:2}*')
 
+        # record watering data in watering.csv
+        watering_dict={"time":time, "zone":zone, "amount (L)":amount, "sunrise_time":datetime.utcfromtimestamp(forecast["city"]["sunrise"]).strftime('%Y-%m-%d %H:%M:%S')} 
+
 @celery.on_after_configure.connect
 def setup_periodic_tasks(sender, **kwargs):
+    # Check csvs
+    check_csvs()
+    sender.add_periodic_task(60.0*20.0, request_sensor_data("A"), name='sensor A: add every 20 minutes')
+    sender.add_periodic_task(60.0*20.0, request_sensor_data("B"), name='sensor B: add every 20 minutes')
     sender.add_periodic_task(60.0*60.0*3, retrieve_weather(), name='weather: add every 3 hours')
     sender.add_periodic_task(crontab(minute=0, hour=0), schedule_watering(sender), name='water: add at midnight')
 
+def check_csvs():
+    if not os.path.isdir('../database'):
+       os.mkdir('../database')
+
+    for path in ['../database/weather.csv','../database/watering.csv','../database/sensors.csv']:
+        if not os.path.exists(path):
+            make_csvs(path)  
+
 def get_current_weather(city="South Bend"):
-    # Enter your API key here
     api_key = os.getenv("API_KEY")
-
-    # base_url variable to store url
     base_url = "http://api.openweathermap.org/data/2.5/weather?&units=imperial"
-
-    # complete_url variable to store
-    # complete url address
     complete_url = base_url + "appid=" + api_key + "&q=" + city
-
-    # get method of requests module
-    # return response object
     response = requests.get(complete_url)
-
-    # json method of response object 
-    # convert json format data into
-    # python format data
     x = response.json()
-    #print(x,"\n")
-
-    # Now x contains list of nested dictionaries
-    # Check the value of "cod" key is equal to
-    # "404", means city is found otherwise,
-    # city is not found
+    
     if x["cod"] != "404":
 
         new_entry = {}
@@ -128,3 +150,6 @@ def get_weather_forecast(city="South Bend"):
 
     else:
         print(" City Not Found ")
+        return None
+
+    return x
