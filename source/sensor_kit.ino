@@ -5,19 +5,21 @@
 #include <ArduinoJson.h>
 
 /* Pinout:
-- A0 -> moisture sensor output
-- A1 -> pH sensor output
-- 4  -> hum/temp sensor output
+- A0 -> moisture sensor input
+- A1 -> pH sensor input
+- 4  -> hum/temp sensor input
 */
 
-#define MYID "A"
+#define MYID "A_UNO"
 #define MOISTPIN 0
 #define DRY_BOUND 523 // from calibration - soil moisture sensor output when just exposed to air - our humidity = 0%RH
 #define WET_BOUND 254 // from calibration - soil moisture sensor output when in a cup of water - our humidity = 100%RH
 #define PHPIN A1
 #define DHTTYPE DHT22 // hum temp sensor type
 #define DHTPIN 4
+#define MSG_BUFSIZ 200
 
+char resp_msg[MSG_BUFSIZ];
 
 // Initialize objects
 //SoftwareSerial BTSerial(RXPIN, TXPIN);
@@ -47,9 +49,6 @@ void setup() {
 
   Serial.begin(9600); // start serial for output
 
-  // Bluetooth HC-05
-  //BTSerial.begin(38400); // why this
-
   // hum/temp
   dht.begin();
 
@@ -66,13 +65,25 @@ void setup() {
 }
 
 void loop() {
+
+  bool requestReady = false;
+  String request = "";
   
   // RESPOND TO REQUEST FROM SHIELD (from controller)
-  if (Serial.available()) {
-    int err_code = read_request();
-    if (err_code == 0 || err_code == 1) {
-      send_response(err_code);
+  while (Serial.available()) {
+    request = Serial.readStringUntil('\n');
+    requestReady = true;
+  }
 
+  if (requestReady) {
+
+    int err_code = read_request(request);
+
+    if (err_code == 0 || err_code == 1){
+      send_response(err_code);
+    }
+
+    if (err_code == 0) {
       zero_out_avgs();
       n_readings = 0;
     }
@@ -118,7 +129,7 @@ bool check_timer(unsigned long timer, unsigned long interval) {
   return 0;
 }
 
-/*    ###############################   BLUETOOTH  #########################   */
+/*    ###############################   WIFI  #########################   */
 
 void increment_Ntranspacket() {
   Ntxpct++;
@@ -129,29 +140,31 @@ void increment_Ntranspacket() {
   }
 }
 
-int read_request() {
+int read_request(String request) {
 
-  bool messageReady = false;
-  String message = "";
+  StaticJsonDocument<100> doc;
+  DeserializationError error = deserializeJson(doc, request);
+  if(error) {
+    sprintf(resp_msg, "DeserializeJson failed");
 
-  if (Serial.available()) {
-    message = Serial.readString();
-    messageReady = true;
+    // Need to get rid of this block eventually bc it 
+    char info_message[MSG_BUFSIZ];
+    sprintf(info_message, "{\"id\":\"%s\", \"type\":\"info\",\"message\":\"Can't deserialize: ", MYID);
+    Serial.print(info_message);
+    Serial.print(request);
+    Serial.println("}");
+    Serial.flush();
+
+    return 1;
   }
-
-  if (messageReady) {
-    StaticJsonDocument<100> doc;
-    DeserializationError error = deserializeJson(doc, message);
-    if(error) {
-      return 1;
-    }
-    if(doc["type"] != "request") {
-      return 2;
-    }
-  } else {
+  if(doc["type"] == "info") {
     return -1;
+  } else if (doc["type"] != "request") {
+    return -2;
   }
-
+  
+  // else, message set and return 0!
+  sprintf(resp_msg, "OK");
   return 0;
 }
 
@@ -162,10 +175,9 @@ void send_response(int err_code) {
   doc["id"] = MYID;
   doc["packet number"] = Ntxpct;
   doc["type"] = "response";
+  doc["message"] = resp_msg;
 
-  if (err_code == 1) {
-    doc["message"] = "Deserialize Json Failed";
-  } else {
+  if (err_code == 0) {
     doc["moisture"] = avg_moist;
     doc["humidity"] = avg_hum;
     doc["temperature"] = avg_temp;
@@ -175,7 +187,11 @@ void send_response(int err_code) {
     doc["ph"] = avg_ph;
   }
 
-  serializeJson(doc, Serial);
+  char response[MSG_BUFSIZ];
+  serializeJson(doc, response);
+  sprintf(response, "%s\n", response);
+  Serial.write(response);
+  Serial.flush();
 
   increment_Ntranspacket();
 }

@@ -1,11 +1,12 @@
 #include <ESP8266WiFi.h>
 #include <ArduinoJson.h>
 
+#define MYID "A"
+#define MSG_BUFSIZ 200
+
 char ssid[] = "ND-guest";
 char password[] = "";
 WiFiServer server(80);
-
-String message = "";
 
 void setup() {
   WiFi.begin(ssid,password);
@@ -27,13 +28,43 @@ void loop () {
   if (client) {
     if (client.connected()) {
 
+      char info_message[MSG_BUFSIZ];
+      sprintf(info_message, "{\"id\":\"%s\", \"type\":\"info\",\"message\":\"Client connected to server\"}", MYID);
+      Serial.println(info_message);
+      Serial.flush();
+
+      // receives the message from the client
+      // But we don't care what it is because we always just return sensor vals
+      String request = client.readStringUntil('\r');
+      client.flush();
+
+      // Read any current buffered data in and discard
+      while(Serial.available()) {
+        Serial.readString();
+      }
+
       // Request Info from Uno:
       request_info();
 
-      String request = client.readStringUntil('\r');    // receives the message from the client
-      client.flush();
-      client.print(message);
-      client.println("\r"); // sends the answer to the client
+      // Reading the response from Uno:
+      String message = "";
+      bool messageReady = false;
+      while(Serial.available()) {
+        message = Serial.readStringUntil('\n');
+        messageReady = true;
+      }
+    
+      if (messageReady) {
+        Serial.print("{\"id\":\"");
+        Serial.print(MYID);
+        Serial.print("\", \"type\":\"info\",\"message\":\"Read response from Uno: ");
+        Serial.print(message);
+        Serial.println("\"}");
+        Serial.flush();
+
+        client.print(message);
+        client.println("\r"); // sends the answer to the client
+      }
     }
     client.stop();
   }
@@ -41,17 +72,13 @@ void loop () {
 
 void request_info() {
 
+  // Sending the request to the uno via the serial
   DynamicJsonDocument doc(100);
-
-  // Sending the request
+  doc["id"] = MYID;
   doc["type"] = "request";
-  serializeJson(doc,Serial);
-  // Reading the response
-  boolean messageReady = false;
-  while(messageReady == false) { // blocking but that's ok
-    if(Serial.available()) {
-      message = Serial.readString();
-      messageReady = true;
-    }
-  }
+  char request[MSG_BUFSIZ];
+  serializeJson(doc,request);
+  sprintf(request, "%s\n", request);
+  Serial.write(request);
+  Serial.flush();
 }
