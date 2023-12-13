@@ -49,10 +49,10 @@
         <nav id="nav-top" class="nav-top" role="navigation" aria-label="Primary navigation">
           <div id="primary">
             <ul>
-              <li><a href="index.html" aria-label="Home"><svg class="icon" width="16" height="16"><use xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="#icon-home"></use></svg></a></li>
-              <li><a href="about.html">More</a></li>
-              <li><a class="active" href="weather_report.html">Weather</a></li>
-              <li><a href="log_in.html">Log In</a></li>
+              <li><a href="{{url_for('index')}}" aria-label="Home"><svg class="icon" width="16" height="16"><use xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="#icon-home"></use></svg></a></li>
+              <li><a href="{{url_for('more')}}">More</a></li>
+              <li><a class="active" href="{{url_for('get_weather')}}">Weather</a></li>
+              <li><a href="{{url_for('log_in')}}">Log In</a></li>
               <li class="nav-search"><button class="btn-search search-toggle" aria-label="Toggle search"><svg class="icon" width="16" height="16"><use xlink:href="#icon-search"></use></svg></button></li>
             </ul>
             <div class="nav-search-wrapper">
@@ -70,7 +70,7 @@
       <!-- Mobile Navbar -->
       <div class="nav-mobile-util">
         <ul class="no-bullets">
-          <li><a href="index.html"><svg class="icon" width="16" height="16"><use xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="#icon-home"></use></svg> Home</a></li>
+          <li><a href="{{url_for('index')}}"><svg class="icon" width="16" height="16"><use xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="#icon-home"></use></svg> Home</a></li>
           <li><button class="btn-search search-toggle"><svg class="icon" width="16" height="16"><use xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="#icon-search"></use></svg> Search</button></li>
           <li><a href="#nav" class="nav-menu nav-skip"><svg version="1.1" class="icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px" viewBox="0 0 20 20" xml:space="preserve"><line class="ni ni1" stroke-width="2" stroke-linecap="square" stroke-miterlimit="10" x1="0.98" y1="2" x2="18.94" y2="2" /><line class="ni ni2" stroke-width="2" stroke-linecap="square" stroke-miterlimit="10" x1="0.98" y1="8.69" x2="18.94" y2="8.69" /></svg><span class="ni ni3">Menu</span></a></li>
         </ul>
@@ -90,8 +90,8 @@
       <div class="page-header"></div>
       <main class="page-main block-center" role="main">
         <ol class="breadcrumbs">
-          <li><a href="index.html">Home</a> › </li>
-          <li><a href="weather_report.html">Weather</a> › </li>
+          <li><a href="{{url_for('index')}}">Home</a> › </li>
+          <li><a href="{{url_for('get_weather')}}">Weather</a> › </li>
           <li>Page Title</li>
         </ol>
         <h1 class="page-title"> Weather</h1>
@@ -151,7 +151,7 @@
         <ul class="footer-breadcrumbs">
           <li><a href="https://engineering.nd.edu">College of Engineering</a></li>
         </ul>
-        <p><a href="index.html" class="site-link" property="url"><span property="name">Lawn Logic</span></a></p>
+        <p><a href="{{url_for('index')}}" class="site-link" property="url"><span property="name">Lawn Logic</span></a></p>
         <div class="footer-contacts">
           <p class="contact-info">
             <span class="address" property="address" typeof="PostalAddress">
