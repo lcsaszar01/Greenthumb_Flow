@@ -1,4 +1,4 @@
-# Notre Dame Web Theme HTML Templates
+# Credit to Notre Dame and their ND Web Theme HTML Templates
 
 A collection of HTML templates that can be used as a starting point when using the Notre Dame Web Theme.
 
