@@ -31,23 +31,14 @@ def log_in(name=None):
     return render_template('log_in.html') 
 
 @app.route('/weather')
-def get_weather():
+def get_weather(name=None):
     city = request.args.get('city')
     weather_data = forecast(city)
 
     return render_template(
         "weather_report.html",
         
-        status=weather_data[0]["descrip[tion]"].capitalize(),
-        temp=f"{weather_data['main']['temp']:.1f}",
-        feels_like=f"{weather_data['main']['feels_like']:.1f}"
     )
-
-
-# first three lines given by ChatGPT -- untested
-@app.route('/receive_serial_data', methods=['POST'])
-def receive_serial_data():
-    sensor_data = request.json  # Assuming data is sent as JSON
 
 
 if __name__ == "__main__":
