@@ -15,7 +15,7 @@ flag = 1
     
 load_dotenv()    
     
-def forcast(whattime, city="South Bend"):
+def forecast(whattime, city="South Bend"):
     # Enter your API key here
     api_key = os.getenv("API_KEY")
 
@@ -76,11 +76,12 @@ def forcast(whattime, city="South Bend"):
 
         curdir = os.path.dirname(__file__)
         head, tail = os.path.split(curdir)
+        print(head)
 
         fd = open(head+"/server/history/"+time_str[0:3]+"_"+time_str[4:7]+"_"+time_str[8:10]+".txt", "a+")
   
-        forcast_str = {time_str: [str(ftemp), str(current_pressure),str(current_humidity), weather_description]}
-        fd.write(str(forcast_str)+"\n")
+        forecast_str = {time_str: [str(ftemp), str(current_pressure),str(current_humidity), weather_description]}
+        fd.write(str(forecast_str)+"\n")
         fd.close()
 
     else:
@@ -95,7 +96,7 @@ if __name__ == "__main__":
     while(flag != 0):
         time.sleep(1800)
         whattime = time.time()
-        forcast(whattime) 
+        forecast(whattime) 
     
 
     

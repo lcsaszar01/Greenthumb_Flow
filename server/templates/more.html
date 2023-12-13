@@ -49,10 +49,10 @@
         <nav id="nav-top" class="nav-top" role="navigation" aria-label="Primary navigation">
           <div id="primary">
             <ul>
-              <li><a href="index.html" aria-label="Home"><svg class="icon" width="16" height="16"><use xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="#icon-home"></use></svg></a></li>
-              <li><a class="active" href="more.html">About</a></li>
-              <li><a href="weather_report.html">Weather</a></li>
-              <li><a href="log_in.html">Log In</a></li>
+              <li><a href="{{url_for('index')}}" aria-label="Home"><svg class="icon" width="16" height="16"><use xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="#icon-home"></use></svg></a></li>
+              <li><a class="active" href="{{url_for('more')}}">About</a></li>
+              <li><a href="{{url_for('get_weather')}}">Weather</a></li>
+              <li><a href="{{url_for('log_in')}}">Log In</a></li>
               <li class="nav-search"><button class="btn-search search-toggle" aria-label="Toggle search"><svg class="icon" width="16" height="16"><use xlink:href="#icon-search"></use></svg></button></li>
             </ul>
             <div class="nav-search-wrapper">
@@ -90,8 +90,8 @@
       <div class="page-header"></div>
       <main class="page-main" role="main">
         <ol class="breadcrumbs">
-          <li><a href="index.html">Home</a> › </li>
-          <li><a href="more.html">About</a> › </li>
+          <li><a href="{{url_for('index')}}">Home</a> › </li>
+          <li><a href="{{url_for('more')}}">About</a> › </li>
           <li>Page Title</li>
         </ol>
         <h1 class="page-title">How it works</h1>
@@ -117,7 +117,7 @@
         <ul class="footer-breadcrumbs">
           <li><a href="https://engineering.nd.edu">Department of Engineering</a></li>
         </ul>
-        <p><a href="index.html" class="site-link" property="url"><span property="name">Lawn Logic</span></a></p>
+        <p><a href="{{url_for('index')}}" class="site-link" property="url"><span property="name">Lawn Logic</span></a></p>
         <div class="footer-contacts">
           <p class="contact-info">
             <span class="address" property="address" typeof="PostalAddress">
