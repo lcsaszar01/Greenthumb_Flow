@@ -12,7 +12,7 @@ import json
 from celery import Celery, Task
 from celery.schedules import crontab
 import tasks
-4
+
 app = Flask(__name__)
 app.config.from_pyfile('celeryconfig.py')
 
