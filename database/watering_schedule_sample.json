@@ -1,0 +1,36 @@
+{
+  "date": "2023-11-28",
+  "zone": "A",
+  "schedule": [
+    {
+      "start_time": "00:00",
+      "end_time": "04:00",
+      "amount (L)": 3.5
+    },
+    {
+      "start_time": "04:00",
+      "end_time": "08:00",
+      "amount (L)": 2.8
+    },
+    {
+      "start_time": "08:00",
+      "end_time": "12:00",
+      "amount (L)": 4.2
+    },
+    {
+      "start_time": "12:00",
+      "end_time": "16:00",
+      "amount (L)": 3.0
+    },
+    {
+      "start_time": "16:00",
+      "end_time": "20:00",
+      "amount (L)": 3.8
+    },
+    {
+      "start_time": "20:00",
+      "end_time": "24:00",
+      "amount (L)": 2.5
+    }
+  ]
+}
