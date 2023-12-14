@@ -3,7 +3,7 @@
 
 from flask import Flask, render_template, request
 import numpy as np 
-import matplotlib.pyplot as plt 
+
 from weather import forecast
 from markupsafe import escape
 from markupsafe import Markup
@@ -16,6 +16,14 @@ from celery.schedules import crontab
 import tasks
 import os
 
+import matplotlib as mpl
+mpl.use('Agg')
+import matplotlib.pyplot as plt
+
+prefix = os.path.dirname(__file__)
+basedir, tail_trash = os.path.split(prefix)
+
+
 app = Flask(__name__)
 app.config.from_pyfile('celeryconfig.py')
 
@@ -26,24 +34,10 @@ def index(name=None):
 # task_id=result.id)
 
 def get_plot(): 
-    df = pd.read_csv("C:/Users/longf/Greenthumb_Flow/database/sensors.csv")
+    df = pd.read_csv("/Users/lcsaszar/Documents/Greenthumb_Flow/demo_data/sensors.csv")
     df = df[df["zone"].isin(["A"])]
     df = df.drop(columns=['time'])
 
-    # data = { 
-    #     'a': np.arange(50), 
-    #     'c': np.random.randint(0, 50, 50), 
-    #     'd': np.random.randn(50) 
-    # } 
-    # data['b'] = data['a'] + 10 * np.random.randn(50) 
-    # data['d'] = np.abs(data['d']) * 100
-  
-    # df.plot.scatter('a', 'b', c='c', s='d', data=data) 
-
-    # ax1 = df.plot(kind='scatter', x='moisture', y='humidity', color='r')
-    # ax2 = df.plot(kind='scatter', x='moisture', y='humidity', color='r')
-    # df.plot.xlabel('X label') 
-    # plot.ylabel('Y label') 
     ax = df.plot(kind="scatter", x="moisture",y="humidity", color="b", label="moisture vs. humidity")
     df.plot(x="temperature",y="humidity", color="r", label="temp. vs. humidity", ax=ax)
     df.plot( x="moisture",y="ph", color="g", label="moisture vs. ph", ax=ax)
@@ -60,7 +54,7 @@ def plot_data():
 
     # Save the figure in the static directory 
     # CHANGE TO YOUR ABSOLUTE PATH BEFORE RUNNING 
-    plot.savefig("c:/Users/longf/Greenthumb_Flow/server/static/plot.png") 
+    plot.savefig("/Users/lcsaszar/Documents/Greenthumb_Flow/server/static/plot.png") 
   
     return render_template('matplotlib-plot1.html') 
 
