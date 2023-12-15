@@ -19,9 +19,16 @@ celery = Celery('tasks', broker = 'redis://localhost:6379/0', backend = 'redis:/
 timezone = 'America/New_York'
 celery.conf.timezone = timezone
 
-data_folder_path = "../database"
+data_folder_path = "../demo_data"
 weather_path = f"{data_folder_path}/weather.csv"
 forecast_path = f"{data_folder_path}/forecast.json"
+
+controller_ip = '10.7.169.198'  # Replace with your Arduino's IP address
+
+# Encode the data in the URL
+def data2req(data_dict):
+    encoded_data = '&'.join([f'{key}={value}' for key, value in data.items()])
+    url = f'http://{controller_ip}/?{encoded_data}'
 
 # This can be the weather getting
 @celery.task
@@ -31,20 +38,28 @@ def retrieve_weather():
 
 @celery.task
 def request_sensor_data(zone):
-    message = {"id":"SERV", "packet number":0, "type":"request", "request_type":"sensor"}
-    print(json.dumps(message))
 
-# sends watering control message to contoller -- can be used by manual override
-@celery.task
-def send_watering_msg(zone, solenoid_state, solenoid_on_duration=0):
-    message = {"id":"SERV", "packet number":0, "type":"request", "request_type":"solenoid_manual", "zone":zone, "solenoid state":solenoid_state, "solenoid on duration":solenoid_on_duration}
-    print(json.dumps(message))
+    print(f"Requesting sensor data from {zone}!")    
+    message = {"id":"SERV", "packet number":0, "type":"request", "request_type":"sensor", "zone":zone}
+    url = data2req(message)
+    response = requests.get(url)
+    
+    # Check the response
+    print(f'Status Code: {response.status_code}')
+    print('Response Content:')
+    rint(response.text)
 
 # sends scheduled watering control messages to controller
 @celery.task
 def send_scheduled_watering_msg(zone, amount):
-    message = {"id":"SERV", "packet number":0, "type":"request", "request_type":"solenoid", "zone":zone, "amount (L)":450}
-    print(json.dumps(message))
+    message = {"id":"SERV", "packet number":0, "type":"request", "request_type":"solenoid", "zone":zone, "amount":0.25}
+    url = data2req(message)
+    response = requests.get(url)
+    
+    # Check the response
+    print(f'Status Code: {response.status_code}')
+    print('Response Content:')
+    print(response.text)
 
 # schedules watering control messages that go to controller to get forwarded
 @celery.task()
@@ -84,12 +99,12 @@ def schedule_watering(sender, **kwargs):
         # record watering data in watering.csv
         watering_dict={"time":time, "zone":zone, "amount (L)":amount, "sunrise_time":datetime.utcfromtimestamp(forecast["city"]["sunrise"]).strftime('%Y-%m-%d %H:%M:%S')} 
 
-@celery.on_after_configure.connect
+@celery.on_after_finalize.connect
 def setup_periodic_tasks(sender, **kwargs):
     # Check csvs
-    check_csvs()
-    sender.add_periodic_task(60.0*20.0, request_sensor_data("A"), name='sensor A: add every 20 minutes')
-    sender.add_periodic_task(60.0*20.0, request_sensor_data("B"), name='sensor B: add every 20 minutes')
+    #check_csvs()
+    sender.add_periodic_task(30.0, request_sensor_data("A"), name='sensor A: add every 20 minutes')
+    sender.add_periodic_task(30.0, request_sensor_data("B"), name='sensor B: add every 20 minutes')
     sender.add_periodic_task(60.0*60.0*3, retrieve_weather(), name='weather: add every 3 hours')
     sender.add_periodic_task(crontab(minute=0, hour=0), schedule_watering(sender), name='water: add at midnight')
 
